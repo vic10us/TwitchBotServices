@@ -1,0 +1,183 @@
+﻿body {
+    margin: 0;
+    padding: 0;
+    background: #333;
+}
+
+h4 {
+    padding: 0;
+    margin: 0;
+}
+
+.leader-board {
+    display: none;
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-weight: bold;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 1rem;
+    padding: 2rem;
+}
+
+.target {
+    position: fixed;
+    width: 30vmin;
+    bottom: -7vmin;
+    height: auto;
+    left: 50%;
+    transform: translateX(-50%) scaleY(0.9);
+    filter: drop-shadow(5px 5px 5px #222);
+}
+
+.drop {
+    position: fixed;
+    width: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transform: rotate(10deg);
+    animation: sway 1s infinite alternate ease-in-out;
+}
+
+    .drop.landed.no-target {
+        transform: rotate(0deg);
+        opacity: 0;
+        animation: fadeout 90s;
+        transform-origin: bottom;
+    }
+
+    .drop.landed.seedling-target {
+        opacity: 0;
+        animation: fadeout 1s;
+        transform-origin: bottom;
+    }
+
+    .drop.landed .chute {
+        transform: scale(0);
+        animation: shrink 1s ease-in-out;
+        transform-origin: bottom;
+    }
+
+.username {
+    font-size: 2rem;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    font-family: 'Press Start 2P', sans-serif;
+    text-shadow: -2px -2px 0px black, 0px -2px 0px black, 2px -2px 0px black, -2px 0px 0px black, 0px 0px 0px black, 2px 0px 0px black, -2px 2px 0px black, 0px 2px 0px black, 2px 2px 0px black;
+}
+
+.drop.landed .username {
+    transform: translateY(110px);
+    animation: move-down 1s ease-in-out;
+}
+
+.username.seedling-target {
+    opacity: 0;
+    animation: fade-only 90s;
+}
+
+.drop .chute {
+    width: 100%;
+}
+
+.drop .user-image {
+    display: block;
+    margin: 0 auto;
+    width: 56px;
+    height: 56px;
+    margin-top: -20px;
+    z-index: 999;
+}
+
+    .drop .user-image img {
+        width: 100%;
+    }
+
+.drop .avatar {
+    width: 100%;
+    height: auto;
+    border-radius: 50%;
+}
+
+.seedling-container {
+    position: fixed;
+    z-index: -1;
+    transform: scale(1) translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    animation: grow 5s linear;
+    transform-origin: bottom left;
+}
+
+    .seedling-container img {
+        filter: drop-shadow(5px 5px 5px #222);
+    }
+
+@keyframes sway {
+    0% {
+        transform: rotate(-10deg);
+    }
+
+    100% {
+        transform: rotate(10deg);
+    }
+}
+
+@keyframes shrink {
+    0% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(0);
+    }
+}
+
+@keyframes grow {
+    0% {
+        transform: scale(0) translateX(-50%);
+    }
+
+    100% {
+        transform: scale(1) translateX(-50%);
+    }
+}
+
+@keyframes fadeout {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0);
+    }
+}
+
+@keyframes fade-only {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes move-down {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(110px);
+    }
+}
