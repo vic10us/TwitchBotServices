@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using AutoMapper;
 using Ganss.XSS;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -12,6 +13,7 @@ using TwitchBot.Service.Models;
 using TwitchBot.Service.Pages;
 using TwitchLib.Api;
 using TwitchLib.Api.Core;
+using TwitchLib.Api.Core.Enums;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
@@ -147,11 +149,24 @@ namespace TwitchBot.Service.Services
                     var param = e.Command.ArgumentsAsList.Any() ? e.Command.ArgumentsAsString : "yourself";
                     _client.SendMessage(_config.Chat.Channel, $"You yeeted {param} into tomorrow!");
                     break;
+                case "stats":
+                    var user = (await _twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> {"vic10usx"})).Users.FirstOrDefault();
+                    var channel = await _twitchApiClient.V5.Channels.GetChannelByIDAsync(user.Id);
+                    var streams = await _twitchApiClient.Helix.Streams.GetStreamsAsync(userIds: new List<string> {user.Id});
+                    _client.SendMessage(_config.Chat.Channel, $"Channel Views: {channel.Views}, Channel Followers: {channel.Followers}, Viewer Count: {streams.Streams.FirstOrDefault()?.ViewerCount}");
+                    break;
                 default:
                     if (_config.Chat.RespondToUnknownCommand)
                         _client.SendMessage(_config.Chat.Channel, $"y33t you! {e.Command.CommandText} obvs doesn't exist! n00b!");
                     break;
             }
+        }
+
+        private string GetAccessToken()
+        {
+            // https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=uo6dggojyb8d6soh92zknwmi5ej1q2&redirect_uri=http://localhost&scope=viewing_activity_read&state=c3ab8aa609ea11e793ae92361f002671
+            // "https://id.twitch.tv/oauth2/token?client_id={ClientId}&client_secret={Secret}&grant_type=client_credentials"
+            throw new NotImplementedException();
         }
 
         private void ClientOnJoinedChannel(object sender, OnJoinedChannelArgs e)
