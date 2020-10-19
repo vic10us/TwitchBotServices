@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using TwitchBot.Service.Extensions;
 using TwitchBot.Service.Features.AutoMapper;
 using TwitchBot.Service.Hubs;
+using TwitchBot.Service.Pages;
 using TwitchBot.Service.Services;
 using TwitchLib.Api;
 using TwitchLib.Api.Core;
@@ -64,7 +65,10 @@ namespace TwitchBot.Service
                     ClientId = config.Auth.ClientId,
                     Secret = config.Auth.ClientSecret
                 };
-                return new TwitchAPI(settings: apiSettings);
+                var api = new TwitchAPI(settings: apiSettings);
+                // var api = new TwitchAPI();
+                api.Settings.AccessToken = config.Auth.AccessToken;
+                return api;
             });
 
             services.AddSingleton(c =>

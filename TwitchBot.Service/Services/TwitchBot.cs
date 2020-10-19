@@ -40,6 +40,7 @@ namespace TwitchBot.Service.Services
             HubConnection hubConnection, 
             HtmlSanitizer sanitizer,
             TwitchMemoryCache twitchMemoryCache,
+            TwitchAPI twitchApi,
             IMapper mapper)
         {
             _config = config.Value ?? throw new MissingConfigException();
@@ -60,13 +61,14 @@ namespace TwitchBot.Service.Services
                 ThrottlingPeriod = TimeSpan.FromSeconds(30)
             };
 
-            var apiSettings = new ApiSettings()
-            {
-                ClientId = _config.Auth.ClientId,
-                Secret = _config.Auth.ClientSecret,
-            };
+            //var apiSettings = new ApiSettings()
+            //{
+            //    ClientId = _config.Auth.ClientId,
+            //    Secret = _config.Auth.ClientSecret,
+            //};
 
-            _twitchApiClient = new TwitchAPI(settings: apiSettings);
+            // _twitchApiClient = new TwitchAPI(settings: apiSettings);
+            _twitchApiClient = twitchApi;
 
             var customClient = new WebSocketClient(clientOptions);
             _client = new TwitchClient(customClient);
@@ -138,7 +140,7 @@ namespace TwitchBot.Service.Services
 
         private async void ClientOnChatCommandReceived(object sender, OnChatCommandReceivedArgs e)
         {
-            _logger.LogInformation($"Receieved Chat Command: {JsonConvert.SerializeObject(e.Command, Formatting.Indented)}");
+            _logger.LogInformation($"Received Chat Command: {JsonConvert.SerializeObject(e.Command, Formatting.Indented)}");
 
             switch (e.Command.CommandText)
             {
@@ -153,7 +155,8 @@ namespace TwitchBot.Service.Services
                     var user = (await _twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> {"vic10usx"})).Users.FirstOrDefault();
                     var channel = await _twitchApiClient.V5.Channels.GetChannelByIDAsync(user.Id);
                     var streams = await _twitchApiClient.Helix.Streams.GetStreamsAsync(userIds: new List<string> {user.Id});
-                    _client.SendMessage(_config.Chat.Channel, $"Channel Views: {channel.Views}, Channel Followers: {channel.Followers}, Viewer Count: {streams.Streams.FirstOrDefault()?.ViewerCount}");
+                    var subs = await _twitchApiClient.Helix.Subscriptions.GetBroadcasterSubscriptions(user.Id);
+                    _client.SendMessage(_config.Chat.Channel, $"Channel Views: {channel.Views}, Channel Followers: {channel.Followers}, Viewer Count: {streams.Streams.FirstOrDefault()?.ViewerCount ?? 0}, Subscriptions: {subs.Data.Count()}");
                     break;
                 default:
                     if (_config.Chat.RespondToUnknownCommand)
@@ -161,14 +164,7 @@ namespace TwitchBot.Service.Services
                     break;
             }
         }
-
-        private string GetAccessToken()
-        {
-            // https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=uo6dggojyb8d6soh92zknwmi5ej1q2&redirect_uri=http://localhost&scope=viewing_activity_read&state=c3ab8aa609ea11e793ae92361f002671
-            // "https://id.twitch.tv/oauth2/token?client_id={ClientId}&client_secret={Secret}&grant_type=client_credentials"
-            throw new NotImplementedException();
-        }
-
+        
         private void ClientOnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
             _logger.LogInformation($"Connected to Channel: {e.Channel}");
