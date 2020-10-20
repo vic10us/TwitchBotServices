@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
 using AutoMapper;
 using Ganss.XSS;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -9,11 +8,10 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using OBS.WebSocket.Client;
 using TwitchBot.Service.Models;
-using TwitchBot.Service.Pages;
 using TwitchLib.Api;
-using TwitchLib.Api.Core;
-using TwitchLib.Api.Core.Enums;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
@@ -33,15 +31,19 @@ namespace TwitchBot.Service.Services
         private readonly HtmlSanitizer _sanitizer;
         private readonly IMapper _mapper;
         private readonly MemoryCache _cache;
+        private readonly OBSWebsocket _obs;
+        private readonly OBSConfig _obsConfig;
 
         public TwitchBot(
-            IOptions<TwitchConfig> config, 
+            IOptions<TwitchConfig> config,
+            IOptions<OBSConfig> obsConfig,
             ILogger<TwitchBot> logger, 
             HubConnection hubConnection, 
             HtmlSanitizer sanitizer,
             TwitchMemoryCache twitchMemoryCache,
             TwitchAPI twitchApi,
-            IMapper mapper)
+            IMapper mapper,
+            OBSWebsocket obs)
         {
             _config = config.Value ?? throw new MissingConfigException();
             _hubConnection = hubConnection;
@@ -50,10 +52,12 @@ namespace TwitchBot.Service.Services
             _sanitizer = sanitizer;
             _mapper = mapper;
             _cache = twitchMemoryCache.Cache;
+            _obs = obs;
+            _obsConfig = obsConfig.Value;
 
             var credentials = new ConnectionCredentials(
                 _config.Chat.BotName,
-                _config.Chat.PaswordGeneratorToken);
+                _config.Chat.PasswordGeneratorToken);
 
             var clientOptions = new ClientOptions
             {
@@ -61,13 +65,6 @@ namespace TwitchBot.Service.Services
                 ThrottlingPeriod = TimeSpan.FromSeconds(30)
             };
 
-            //var apiSettings = new ApiSettings()
-            //{
-            //    ClientId = _config.Auth.ClientId,
-            //    Secret = _config.Auth.ClientSecret,
-            //};
-
-            // _twitchApiClient = new TwitchAPI(settings: apiSettings);
             _twitchApiClient = twitchApi;
 
             var customClient = new WebSocketClient(clientOptions);
@@ -80,6 +77,38 @@ namespace TwitchBot.Service.Services
             _client.OnMessageReceived += ClientOnMessageReceived;
 
             _client.Connect();
+
+            SetupOBS();
+        }
+
+        private void SetupOBS()
+        {
+            _obs.Connected += OnObsConnected;
+            _obs.Connect(_obsConfig.Connection.Url, _obsConfig.Connection.Password);
+        }
+
+        private void OnObsConnected(object sender, EventArgs e)
+        {
+            _logger.LogInformation("Connected to OBS");
+            var sceneList = _obs.GetSceneList();
+
+            var mainScene = sceneList.Scenes.FirstOrDefault(s => s.Name.Equals("Main", StringComparison.InvariantCultureIgnoreCase));
+            if (mainScene != null)
+            {
+                var motionFilter = _obs.GetSourceFilterInfo(mainScene.Name, "Motion");
+
+                if (motionFilter != null)
+                {
+                    var json = JsonConvert.SerializeObject(motionFilter.Settings, Formatting.Indented);
+                    var x = JsonConvert.DeserializeObject<MotionFilter>(json);
+                    _logger.LogInformation(json);
+                }
+            }
+
+            foreach (var scene in sceneList.Scenes)
+            {
+                _logger.LogInformation($"Found Scene: {scene.Name}");
+            }
         }
 
         private async void ClientOnMessageReceived(object sender, OnMessageReceivedArgs e)
@@ -89,10 +118,10 @@ namespace TwitchBot.Service.Services
                 (_config.IgnoredUsers.Any(iu => iu.Equals(e.ChatMessage.Username, StringComparison.InvariantCultureIgnoreCase)))
                ) return;
 
-            var isTeamMember = _config.TeamMembers.Any(tm =>
-                    tm.Id.Equals(e.ChatMessage.UserId, StringComparison.InvariantCultureIgnoreCase));
+            var teamMember = _config.TeamMembers.FirstOrDefault(tm =>
+                tm.Id.Equals(e.ChatMessage.UserId, StringComparison.InvariantCultureIgnoreCase));
 
-            if (isTeamMember && !_cache.TryGetValue($"TeamShoutout:{e.ChatMessage.UserId}", out string cacheEntry))
+            if (teamMember != null && !teamMember.IgnoreShoutOut && !_cache.TryGetValue($"TeamShoutout:{e.ChatMessage.UserId}", out string cacheEntry))
             {
                 var cacheEntryOptions = new MemoryCacheEntryOptions()
                     .SetSize(1)
@@ -105,7 +134,8 @@ namespace TwitchBot.Service.Services
                 _client.SendMessage(_config.Chat.Channel, message);
                 _cache.Set($"TeamShoutout:{e.ChatMessage.UserId}", cacheEntry, cacheEntryOptions);
             }
-            var sanitizedHtml = _sanitizer.Sanitize(e.ChatMessage.Message);
+            var sanitizedHtml = System.Net.WebUtility.HtmlDecode(_sanitizer.Sanitize(e.ChatMessage.Message));
+            // System.Net.WebUtility.HtmlDecode(sanitizedHtml);
             var emotes = _mapper.Map<IEnumerable<EmoteDto>>(e.ChatMessage.EmoteSet.Emotes);
 
             var userTypes = UserTypes.None;
@@ -141,8 +171,9 @@ namespace TwitchBot.Service.Services
         private async void ClientOnChatCommandReceived(object sender, OnChatCommandReceivedArgs e)
         {
             _logger.LogInformation($"Received Chat Command: {JsonConvert.SerializeObject(e.Command, Formatting.Indented)}");
+            var commandUser = (await _twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> { $"{e.Command.ChatMessage.UserId}" })).Users.FirstOrDefault();
 
-            switch (e.Command.CommandText)
+            switch (e.Command.CommandText.ToLowerInvariant())
             {
                 case "drop":
                     await _hubConnection.InvokeAsync("SendMessage", e.Command.ChatMessage.DisplayName, "Make it rain!!!");
@@ -158,13 +189,39 @@ namespace TwitchBot.Service.Services
                     var subs = await _twitchApiClient.Helix.Subscriptions.GetBroadcasterSubscriptions(user.Id);
                     _client.SendMessage(_config.Chat.Channel, $"Channel Views: {channel.Views}, Channel Followers: {channel.Followers}, Viewer Count: {streams.Streams.FirstOrDefault()?.ViewerCount ?? 0}, Subscriptions: {subs.Data.Count()}");
                     break;
+                case "grow":
+                    if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
+                    {
+                        TriggerHotkeyByName("Backward [ Motion ] ");
+                    }
+                    break;
+                case "shrink":
+                    if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
+                    {
+                        TriggerHotkeyByName("Forward [ Motion ] ");
+                    }
+                    break;
                 default:
                     if (_config.Chat.RespondToUnknownCommand)
-                        _client.SendMessage(_config.Chat.Channel, $"y33t you! {e.Command.CommandText} obvs doesn't exist! n00b!");
+                        _client.SendMessage(
+                            _config.Chat.Channel, 
+                            $"y33t you! {e.Command.CommandText} obvs doesn't exist! n00b!"
+                        );
                     break;
             }
         }
-        
+
+        /// <summary>
+        /// Set the current scene to the specified one
+        /// </summary>
+        /// <param name="sceneName">The desired scene name</param>
+        public void TriggerHotkeyByName(string hotKeyName)
+        {
+            var requestFields = new JObject { { "hotkeyName", hotKeyName } };
+
+            _obs.SendRequest("TriggerHotkeyByName", requestFields);
+        }
+
         private void ClientOnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
             _logger.LogInformation($"Connected to Channel: {e.Channel}");

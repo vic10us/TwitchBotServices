@@ -1,3 +1,4 @@
+using System;
 using AutoMapper;
 using Ganss.XSS;
 using Microsoft.AspNetCore.Builder;
@@ -7,10 +8,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using OBS.WebSocket.Client;
 using TwitchBot.Service.Extensions;
-using TwitchBot.Service.Features.AutoMapper;
 using TwitchBot.Service.Hubs;
-using TwitchBot.Service.Pages;
 using TwitchBot.Service.Services;
 using TwitchLib.Api;
 using TwitchLib.Api.Core;
@@ -56,6 +56,13 @@ namespace TwitchBot.Service
             });
             services.AddSingleton<Services.TwitchBot>();
             services.Configure<TwitchConfig>(Configuration.GetSection("Twitch"));
+            services.Configure<OBSConfig>(Configuration.GetSection("OBS"));
+
+            services.AddSingleton(c =>
+            {
+                var obs = new OBSWebsocket { WSTimeout = TimeSpan.FromMinutes(10) };
+                return obs;
+            });
 
             services.AddTransient<TwitchAPI>(c =>
             {

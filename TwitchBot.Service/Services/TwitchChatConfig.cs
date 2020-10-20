@@ -2,7 +2,7 @@
 {
     public class TwitchChatConfig
     {
-        public string PaswordGeneratorToken { get; set; }
+        public string PasswordGeneratorToken { get; set; }
         public string AppToken { get; set; }
         public string BotName { get; set; }
         public string Channel { get; set; }
