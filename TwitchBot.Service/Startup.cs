@@ -8,9 +8,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using OBS.WebSocket.Client;
+using OBS.WebSockets.Core;
 using TwitchBot.Service.Extensions;
 using TwitchBot.Service.Hubs;
+using TwitchBot.Service.Models;
 using TwitchBot.Service.Services;
 using TwitchLib.Api;
 using TwitchLib.Api.Core;
@@ -33,11 +34,9 @@ namespace TwitchBot.Service
             services.AddCors(); // Make sure you call this previous to AddMvc
             services.AddAutoMapper(typeof(Startup));
             
-            services.AddSingleton<TwitchMemoryCache>();
-
             services.AddOptions();
 
-            services.AddTransient<HtmlSanitizer>(c =>
+            services.AddSingleton<HtmlSanitizer>(c =>
             {
                 var s = new HtmlSanitizer();
                 var allowedTags = new[]
@@ -57,7 +56,13 @@ namespace TwitchBot.Service
             services.AddSingleton<Services.TwitchBot>();
             services.Configure<TwitchConfig>(Configuration.GetSection("Twitch"));
             services.Configure<OBSConfig>(Configuration.GetSection("OBS"));
-
+            services.Configure<WLEDConfig>(Configuration.GetSection("WLED"));
+            services.AddHttpClient<WLEDService>("WLEDService", c =>
+            {
+                c.BaseAddress = new Uri(Configuration["WLED:BaseUrl"]);
+            });
+            services.AddSingleton<WLEDService>();
+            services.AddSingleton<TwitchMemoryCache>();
             services.AddSingleton(c =>
             {
                 var obs = new OBSWebsocket { WSTimeout = TimeSpan.FromMinutes(10) };

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OBS.WebSocket.Client;
+using OBS.WebSockets.Core;
 using TwitchBot.Service.Models;
 using TwitchLib.Api;
 using TwitchLib.Client;
@@ -33,6 +33,7 @@ namespace TwitchBot.Service.Services
         private readonly MemoryCache _cache;
         private readonly OBSWebsocket _obs;
         private readonly OBSConfig _obsConfig;
+        private readonly WLEDService _wledService;
 
         public TwitchBot(
             IOptions<TwitchConfig> config,
@@ -43,7 +44,8 @@ namespace TwitchBot.Service.Services
             TwitchMemoryCache twitchMemoryCache,
             TwitchAPI twitchApi,
             IMapper mapper,
-            OBSWebsocket obs)
+            OBSWebsocket obs,
+            WLEDService wledService)
         {
             _config = config.Value ?? throw new MissingConfigException();
             _hubConnection = hubConnection;
@@ -54,6 +56,7 @@ namespace TwitchBot.Service.Services
             _cache = twitchMemoryCache.Cache;
             _obs = obs;
             _obsConfig = obsConfig.Value;
+            _wledService = wledService;
 
             var credentials = new ConnectionCredentials(
                 _config.Chat.BotName,
@@ -190,16 +193,35 @@ namespace TwitchBot.Service.Services
                     _client.SendMessage(_config.Chat.Channel, $"Channel Views: {channel.Views}, Channel Followers: {channel.Followers}, Viewer Count: {streams.Streams.FirstOrDefault()?.ViewerCount ?? 0}, Subscriptions: {subs.Data.Count()}");
                     break;
                 case "grow":
-                    if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
-                    {
-                        TriggerHotkeyByName("Backward [ Motion ] ");
-                    }
+                    //if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
+                    //{
+                    TriggerHotkeyByName("Backward [ Motion ] ");
+                    //}
                     break;
                 case "shrink":
-                    if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
+                    //if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
+                    //{
+                    TriggerHotkeyByName("Forward [ Motion ] ");
+                    //}
+                    break;
+                case "ledfx":
+                    if (string.IsNullOrWhiteSpace(e.Command.ArgumentsAsString))
                     {
-                        TriggerHotkeyByName("Forward [ Motion ] ");
+                        _client.SendMessage(_config.Chat.Channel, "ledfx command requires the name of the fx you want to set. see reference below?");
+                        break;
                     }
+                    var conf = await _wledService.GetRootConfig();
+                    var fxItem = conf.effects.ToList().FindIndex(c => c.Equals(e.Command.ArgumentsAsString, StringComparison.InvariantCultureIgnoreCase));
+                    if (fxItem >= 0)
+                    {
+                        await _wledService.SetFx(fxItem);
+                    }
+                    else
+                    {
+                        _client.SendMessage(_config.Chat.Channel, $"\"{e.Command.ArgumentsAsString}\" is not a valid FX");
+                    }
+                    // _client.SendWhisper(e.Command.ChatMessage.Username, message);
+                    // _client.SendMessage(_config.Chat.Channel, message);
                     break;
                 default:
                     if (_config.Chat.RespondToUnknownCommand)
