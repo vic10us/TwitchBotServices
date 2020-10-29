@@ -1,0 +1,52 @@
+﻿:root {
+    --red: #f11012;
+    --red-darker: #d90d10;
+    --blue: #0f0fdd;
+    --blue-darker: #0f0fa1;
+    --green: #82af3a;
+    --black: #0f111a;
+    --white: #ffffff;
+    --offwhite: #f8f8f2;
+    --yellow: #ffb626;
+    --mod: #13a133;
+    --vip: #d91ca8;
+    --broadcaster: #e20f1f;
+    --grid-unit: 0.5rem;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+    --font-family-heading: 'Work Sans', sans-serif;
+    --font-family-main: 'Work Sans', sans-serif;
+    --global-transition-time: 0.2s;
+}
+
+html,
+body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-size: 16px;
+    font-weight: var(--font-weight-normal);
+    margin: 0;
+    box-sizing: border-box;
+    font-family: var(--font-family-main);
+    background-position: center;
+    background-color: transparent;
+}
+
+body > * {
+    box-sizing: border-box;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+    margin: 0;
+    font-weight: var(--font-weight-normal);
+}

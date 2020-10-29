@@ -1,23 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
+using ChatBotPrime.Core.Interfaces.Chat;
 using Ganss.XSS;
-using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OBS.WebSockets.Core;
+using TwitchBot.Service.Hubs;
 using TwitchBot.Service.Models;
 using TwitchLib.Api;
 using TwitchLib.Client;
 using TwitchLib.Client.Events;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
+using TwitchLib.Communication.Events;
 using TwitchLib.Communication.Models;
 using TwitchLib.PubSub.Events;
+using ChatMessage = ChatBotPrime.Core.Events.EventArguments.ChatMessage;
 
 namespace TwitchBot.Service.Services
 {
@@ -25,7 +30,6 @@ namespace TwitchBot.Service.Services
     {
         private readonly TwitchConfig _config;
         private readonly TwitchClient _client;
-        private readonly HubConnection _hubConnection;
         private readonly ILogger<TwitchBot> _logger;
         private readonly TwitchAPI _twitchApiClient;
         private readonly HtmlSanitizer _sanitizer;
@@ -34,22 +38,24 @@ namespace TwitchBot.Service.Services
         private readonly OBSWebsocket _obs;
         private readonly OBSConfig _obsConfig;
         private readonly WLEDService _wledService;
+        private readonly IEnumerable<IChatCommand> _chatCommands;
+        private readonly IHubContext<TwitchHub> _twitchHub;
 
         public TwitchBot(
             IOptions<TwitchConfig> config,
             IOptions<OBSConfig> obsConfig,
-            ILogger<TwitchBot> logger, 
-            HubConnection hubConnection, 
+            ILogger<TwitchBot> logger,
+            IHubContext<TwitchHub> twitchHub,
             HtmlSanitizer sanitizer,
             TwitchMemoryCache twitchMemoryCache,
             TwitchAPI twitchApi,
             IMapper mapper,
             OBSWebsocket obs,
-            WLEDService wledService)
+            WLEDService wledService,
+            IEnumerable<IChatCommand> chatCommands)
         {
             _config = config.Value ?? throw new MissingConfigException();
-            _hubConnection = hubConnection;
-            _hubConnection.StartAsync();
+            _twitchHub = twitchHub;
             _logger = logger;
             _sanitizer = sanitizer;
             _mapper = mapper;
@@ -57,6 +63,7 @@ namespace TwitchBot.Service.Services
             _obs = obs;
             _obsConfig = obsConfig.Value;
             _wledService = wledService;
+            _chatCommands = chatCommands;
 
             var credentials = new ConnectionCredentials(
                 _config.Chat.BotName,
@@ -78,16 +85,27 @@ namespace TwitchBot.Service.Services
             _client.OnJoinedChannel += ClientOnJoinedChannel;
             _client.OnChatCommandReceived += ClientOnChatCommandReceived;
             _client.OnMessageReceived += ClientOnMessageReceived;
-
+            _client.OnDisconnected += ClientOnDisconnected;
             _client.Connect();
 
             SetupOBS();
         }
 
+        private void ClientOnDisconnected(object sender, OnDisconnectedEventArgs e)
+        {
+            if (!_client.IsConnected) _client.Connect();
+        }
+
         private void SetupOBS()
         {
             _obs.Connected += OnObsConnected;
+            _obs.Disconnected += OnObsDisconnected;
             _obs.Connect(_obsConfig.Connection.Url, _obsConfig.Connection.Password);
+        }
+
+        private void OnObsDisconnected(object sender, EventArgs e)
+        {
+            if (!_obs.IsConnected) _obs.Connect(_obsConfig.Connection.Url, _obsConfig.Connection.Password);
         }
 
         private void OnObsConnected(object sender, EventArgs e)
@@ -121,22 +139,7 @@ namespace TwitchBot.Service.Services
                 (_config.IgnoredUsers.Any(iu => iu.Equals(e.ChatMessage.Username, StringComparison.InvariantCultureIgnoreCase)))
                ) return;
 
-            var teamMember = _config.TeamMembers.FirstOrDefault(tm =>
-                tm.Id.Equals(e.ChatMessage.UserId, StringComparison.InvariantCultureIgnoreCase));
-
-            if (teamMember != null && !teamMember.IgnoreShoutOut && !_cache.TryGetValue($"TeamShoutout:{e.ChatMessage.UserId}", out string cacheEntry))
-            {
-                var cacheEntryOptions = new MemoryCacheEntryOptions()
-                    .SetSize(1)
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(30));
-                var channel = await _twitchApiClient.V5.Channels.GetChannelByIDAsync(e.ChatMessage.UserId);
-                var message = @$"{_config.TeamName} team member detected! 
-    YEET!, @{e.ChatMessage.Username}! 
-    Check out their channel here: https://twitch.tv/{e.ChatMessage.Username} 
-    | They were last seen streaming {channel.Status} in {channel.Game}";
-                _client.SendMessage(_config.Chat.Channel, message);
-                _cache.Set($"TeamShoutout:{e.ChatMessage.UserId}", cacheEntry, cacheEntryOptions);
-            }
+            await CallOutUser(e.ChatMessage);
             var sanitizedHtml = System.Net.WebUtility.HtmlDecode(_sanitizer.Sanitize(e.ChatMessage.Message));
             // System.Net.WebUtility.HtmlDecode(sanitizedHtml);
             var emotes = _mapper.Map<IEnumerable<EmoteDto>>(e.ChatMessage.EmoteSet.Emotes);
@@ -163,7 +166,31 @@ namespace TwitchBot.Service.Services
                 UserTypes = userTypes
             };
 
-            await _hubConnection.InvokeAsync("SendChatMessage", data);
+            var uo = _twitchApiClient.Helix.Users.GetUsersAsync(ids: new List<string> { data.UserId }).Result.Users.FirstOrDefault();
+            data.LogoUrl = uo?.ProfileImageUrl;
+            await _twitchHub.Clients.All.SendAsync("ReceiveChatMessage", data, uo);
+            // await _hubConnection.InvokeAsync("SendChatMessage", data);
+        }
+
+        private async Task CallOutUser(TwitchLibMessage e)
+        {
+            var teamMember = _config.TeamMembers.FirstOrDefault(tm =>
+                tm.Id.Equals(e.UserId, StringComparison.InvariantCultureIgnoreCase));
+
+            if (teamMember != null && !teamMember.IgnoreShoutOut &&
+                !_cache.TryGetValue($"TeamShoutout:{e.UserId}", out string cacheEntry))
+            {
+                var cacheEntryOptions = new MemoryCacheEntryOptions()
+                    .SetSize(1)
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(30));
+                var channel = await _twitchApiClient.V5.Channels.GetChannelByIDAsync(e.UserId);
+                var message = @$"{_config.TeamName} team member detected! 
+    YEET!, @{e.Username}! 
+    Check out their channel here: https://twitch.tv/{e.Username} 
+    | They were last seen streaming {channel.Status} in {channel.Game}";
+                _client.SendMessage(_config.Chat.Channel, message);
+                _cache.Set($"TeamShoutout:{e.UserId}", cacheEntry, cacheEntryOptions);
+            }
         }
 
         private void OnFollow(object sender, OnFollowArgs e)
@@ -175,16 +202,24 @@ namespace TwitchBot.Service.Services
         {
             _logger.LogInformation($"Received Chat Command: {JsonConvert.SerializeObject(e.Command, Formatting.Indented)}");
             var commandUser = (await _twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> { $"{e.Command.ChatMessage.UserId}" })).Users.FirstOrDefault();
+            await CallOutUser(e.Command.ChatMessage);
 
+            var cca = new ChatBotPrime.Core.Events.EventArguments.ChatCommand(e.Command.ArgumentsAsList, e.Command.ArgumentsAsString, e.Command.CommandIdentifier, e.Command.CommandText, _mapper.Map<ChatMessage>(e.Command.ChatMessage));
+            var response = _chatCommands.FirstOrDefault(cc => cc.IsMatch(e.Command.CommandText));
+            if (response != null) _client.SendMessage(_config.Chat.Channel, response.Response(null, cca));
+            
             switch (e.Command.CommandText.ToLowerInvariant())
             {
                 case "drop":
-                    await _hubConnection.InvokeAsync("SendMessage", e.Command.ChatMessage.DisplayName, "Make it rain!!!");
+                    var uo = _twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> { e.Command.ChatMessage.DisplayName }).Result.Users.FirstOrDefault();
+                    await _twitchHub.Clients.All.SendAsync("ReceiveMessage", e.Command.ChatMessage.DisplayName, "Make id rain", uo);
+                    // await _twitchHub.Clients.All.SendAsync("SendMessage", e.Command.ChatMessage.DisplayName, "Make it rain!!!");
+                    // await _hubConnection.InvokeAsync("SendMessage", e.Command.ChatMessage.DisplayName, "Make it rain!!!");
                     break;
-                case "yeet":
-                    var param = e.Command.ArgumentsAsList.Any() ? e.Command.ArgumentsAsString : "yourself";
-                    _client.SendMessage(_config.Chat.Channel, $"You yeeted {param} into tomorrow!");
-                    break;
+                //case "yeet":
+                //    var param = e.Command.ArgumentsAsList.Any() ? e.Command.ArgumentsAsString : "yourself";
+                //    _client.SendMessage(_config.Chat.Channel, $"You yeeted {param} into tomorrow!");
+                //    break;
                 case "stats":
                     var user = (await _twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> {"vic10usx"})).Users.FirstOrDefault();
                     var channel = await _twitchApiClient.V5.Channels.GetChannelByIDAsync(user.Id);
@@ -195,13 +230,13 @@ namespace TwitchBot.Service.Services
                 case "grow":
                     //if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
                     //{
-                    TriggerHotkeyByName("Backward [ Motion ] ");
+                    TriggerHotKeyByName("Backward [ Motion ] ");
                     //}
                     break;
                 case "shrink":
                     //if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
                     //{
-                    TriggerHotkeyByName("Forward [ Motion ] ");
+                    TriggerHotKeyByName("Forward [ Motion ] ");
                     //}
                     break;
                 case "ledfx":
@@ -236,8 +271,8 @@ namespace TwitchBot.Service.Services
         /// <summary>
         /// Set the current scene to the specified one
         /// </summary>
-        /// <param name="sceneName">The desired scene name</param>
-        public void TriggerHotkeyByName(string hotKeyName)
+        /// <param name="hotKeyName">The desired scene name</param>
+        public void TriggerHotKeyByName(string hotKeyName)
         {
             var requestFields = new JObject { { "hotkeyName", hotKeyName } };
 

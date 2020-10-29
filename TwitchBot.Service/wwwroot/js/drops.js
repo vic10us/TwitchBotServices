@@ -1,6 +1,6 @@
 ﻿var connection = new signalR
     .HubConnectionBuilder()
-    .withUrl("/twitchHub")
+    .withUrl('/twitchHub')
     .withAutomaticReconnect()
     .configureLogging(signalR.LogLevel.Information)
     .build();
@@ -13,7 +13,7 @@ let drops = [];
 const currentUsers = {};
 let highScores = [];
 
-connection.on("ReceiveMessage", function (user, message, uo) {
+connection.on('ReceiveMessage', function (user, message, uo) {
     if (currentUsers[user]) return;
     
     const u = {
@@ -180,7 +180,7 @@ function update() {
                     username: drop.username,
                     score: finalScore.toFixed(2)
                 });
-                renderLeaderBoard();
+                // renderLeaderBoard();
                 addSeedling(x, finalScore, drop.username);
                 currentUsers[drop.username] = false;
                 drop.element.classList.add('seedling-target');

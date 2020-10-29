@@ -1,0 +1,18 @@
+﻿@page
+@model TwitchBot.Service.Pages.ChatModel
+@{
+    Layout = "_LayoutBlank";
+}
+@section head
+{
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="Description" content="Put your description here.">
+    <base href="/">
+    <link rel="stylesheet" href="~/chat/global.css">
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;700&amp;display=swap" rel="stylesheet">
+    <title>twitch-messages</title>
+    <link rel="preload" href="~/chat/d3fc6195.js" as="script" crossorigin="anonymous">
+}
+<twitch-messages maxmessages="10" messagetimeout="10000" webserviceurl="/twitchHub"></twitch-messages>
+<script type="module" src="~/chat/d3fc6195.js"></script>

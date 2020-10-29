@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "twitchbotservice.fullname" . }}
+  labels:
+    app: {{ template "twitchbotservice.name" . }}
+    chart: {{ template "twitchbotservice.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ template "twitchbotservice.name" . }}
+    release: {{ .Release.Name }}

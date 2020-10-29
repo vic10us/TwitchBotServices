@@ -54,6 +54,7 @@ namespace TwitchBot.Service
                 return s;
             });
             services.AddSingleton<Services.TwitchBot>();
+            services.AddTwitchCommands();
             services.Configure<TwitchConfig>(Configuration.GetSection("Twitch"));
             services.Configure<OBSConfig>(Configuration.GetSection("OBS"));
             services.Configure<WLEDConfig>(Configuration.GetSection("WLED"));
@@ -78,21 +79,10 @@ namespace TwitchBot.Service
                     Secret = config.Auth.ClientSecret
                 };
                 var api = new TwitchAPI(settings: apiSettings);
-                // var api = new TwitchAPI();
                 api.Settings.AccessToken = config.Auth.AccessToken;
                 return api;
             });
 
-            services.AddSingleton(c =>
-            {
-                var connection = new HubConnectionBuilder()
-                    .WithUrl("http://localhost:5000/TwitchHub")
-                    .WithAutomaticReconnect()
-                    .Build();
-
-                return connection;
-            });
-            
             services.AddSerilog(Configuration);
             services.AddRazorPages();
             services.AddSignalR()
