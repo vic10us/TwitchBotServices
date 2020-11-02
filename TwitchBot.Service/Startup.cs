@@ -1,15 +1,17 @@
 using System;
+using System.Reflection;
 using AutoMapper;
 using Ganss.XSS;
+using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using OBS.WebSockets.Core;
 using TwitchBot.Service.Extensions;
+using TwitchBot.Service.Features.MediatR;
 using TwitchBot.Service.Hubs;
 using TwitchBot.Service.Models;
 using TwitchBot.Service.Services;
@@ -36,7 +38,7 @@ namespace TwitchBot.Service
             
             services.AddOptions();
 
-            services.AddSingleton<HtmlSanitizer>(c =>
+            services.AddSingleton(c =>
             {
                 var s = new HtmlSanitizer();
                 var allowedTags = new[]
@@ -69,19 +71,23 @@ namespace TwitchBot.Service
                 var obs = new OBSWebsocket { WSTimeout = TimeSpan.FromMinutes(10) };
                 return obs;
             });
+            services.AddSingleton<OBSServices>();
 
-            services.AddTransient<TwitchAPI>(c =>
+            services.AddTransient(c =>
             {
-                var config = c.GetService<IOptions<TwitchConfig>>().Value;
+                var config = c.GetService<IOptions<TwitchConfig>>()?.Value;
                 IApiSettings apiSettings = new ApiSettings
                 {
-                    ClientId = config.Auth.ClientId,
-                    Secret = config.Auth.ClientSecret
+                    ClientId = config?.Auth.ClientId,
+                    Secret = config?.Auth.ClientSecret
                 };
                 var api = new TwitchAPI(settings: apiSettings);
-                api.Settings.AccessToken = config.Auth.AccessToken;
+                api.Settings.AccessToken = config?.Auth.AccessToken;
                 return api;
             });
+
+            services.AddTransient<INotifierMediatorService, NotifierMediatorService>();
+            services.AddMediatR(Assembly.GetExecutingAssembly());
 
             services.AddSerilog(Configuration);
             services.AddRazorPages();

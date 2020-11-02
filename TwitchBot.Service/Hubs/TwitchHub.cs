@@ -1,11 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using TwitchBot.Service.Models;
-using TwitchLib.Api;
+﻿using Microsoft.AspNetCore.SignalR;
 
 namespace TwitchBot.Service.Hubs
 {
@@ -13,10 +6,6 @@ namespace TwitchBot.Service.Hubs
     {
         //private readonly TwitchAPI _twitchApi;
 
-        public TwitchHub() // TwitchAPI twitchApi
-        {
-            // _twitchApi = twitchApi;
-        }
         //public async Task SendMessage(string user, string message)
         //{
         //    var uo = _twitchApi.Helix.Users.GetUsersAsync(logins: new List<string> {user}).Result.Users.FirstOrDefault();
