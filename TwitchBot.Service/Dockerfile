@@ -4,7 +4,6 @@ EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
-COPY ["CharBotPrime/ChatBotPrime.Core/ChatBotPrime.Core.csproj", "CharBotPrime/ChatBotPrime.Core/"]
 COPY ["TwitchBot.Service/TwitchBot.Service.csproj", "TwitchBot.Service/"]
 
 RUN dotnet restore "TwitchBot.Service/TwitchBot.Service.csproj"

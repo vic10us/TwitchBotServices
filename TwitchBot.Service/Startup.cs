@@ -56,7 +56,7 @@ namespace TwitchBot.Service
                 return s;
             });
             services.AddSingleton<Services.TwitchBot>();
-            services.AddTwitchCommands();
+            services.AddSingleton<TwitchClientServices>();
             services.Configure<TwitchConfig>(Configuration.GetSection("Twitch"));
             services.Configure<OBSConfig>(Configuration.GetSection("OBS"));
             services.Configure<WLEDConfig>(Configuration.GetSection("WLED"));

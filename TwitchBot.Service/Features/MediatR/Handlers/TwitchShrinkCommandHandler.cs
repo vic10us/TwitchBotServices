@@ -19,12 +19,25 @@ namespace TwitchBot.Service.Features.MediatR.Handlers
 
         public Task Handle(ShrinkCommand notification, CancellationToken cancellationToken)
         {
-            var currentScenes = _obs.OBSClient.GetSceneList();
-            if (!currentScenes.CurrentScene.StartsWith("Main", StringComparison.InvariantCultureIgnoreCase)) return Task.CompletedTask;
-            var mainScenes = currentScenes.Scenes.Where(n => n.Name.StartsWith("Main", StringComparison.InvariantCultureIgnoreCase)).ToList();
-            var i = mainScenes.FindIndex(0, s => s.Name.Equals(currentScenes.CurrentScene));
-            if (i == 0) return Task.CompletedTask;
-            _obs.OBSClient.SetCurrentScene(mainScenes[i - 1].Name);
+            var i = _obs.OBSClient
+                .GetSourceFilters("Main")
+                .Where(sf => sf.IsEnabled && sf.Type.Equals("move_source_filter", StringComparison.InvariantCultureIgnoreCase))
+                .ToList();
+            if (!i.Any()) return Task.CompletedTask;
+            var active = i.FirstOrDefault(sf => sf.Settings["activated"] != null && (bool)sf.Settings["activated"])
+                         ?? i.FirstOrDefault(sf => sf.Name.Equals("Main075"))
+                         ?? i.First();
+            if (active == null) return Task.CompletedTask;
+            var nextIndex = i.IndexOf(active) - 1;
+            if (nextIndex < 0) return Task.CompletedTask;
+            var next = i[nextIndex];
+            _obs.TriggerHotKeyByName(next.Name);
+            for (var p = 0; p < i.Count; p++)
+            {
+                var current = i[p];
+                current.Settings["activated"] = p == nextIndex;
+                _obs.OBSClient.SetSourceFilterSettings("Main", current.Name, current.Settings);
+            }
             return Task.CompletedTask;
         }
     }

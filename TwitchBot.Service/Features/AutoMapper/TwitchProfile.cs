@@ -9,7 +9,6 @@ namespace TwitchBot.Service.Features.AutoMapper
         public TwitchProfile()
         {
             CreateMap<Emote, EmoteDto>();
-            CreateMap<ChatMessage, ChatBotPrime.Core.Events.EventArguments.ChatMessage>();
         }
     }
 }

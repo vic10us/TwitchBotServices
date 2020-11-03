@@ -1,10 +1,19 @@
 ﻿using System;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OBS.WebSockets.Core;
 using TwitchBot.Service.Features.MediatR;
 
 namespace TwitchBot.Service.Services
 {
+    public class AppSettings
+    {
+        public int Version { get; set; }
+        public string Name { get; set; }
+        public string CurrentVideoSize { get; set; }
+    }
+
     public class OBSServices
     {
         private readonly OBSConfig _obsConfig;
@@ -45,6 +54,28 @@ namespace TwitchBot.Service.Services
         {
             var disconnected = this.Disconnected;
             disconnected?.Invoke(this, e);
+            ConnectOBS();
+        }
+
+        public void TriggerHotKeyByName(string hotKeyName)
+        {
+            var request = new JObject { { "hotkeyName", hotKeyName } };
+
+            OBSClient.SendRequest("TriggerHotkeyByName", request);
+        }
+
+        public AppSettings GetAppSettings()
+        {
+            var y = OBSClient.GetSourceSettings("settings.json");
+            var appSettings = JsonConvert.DeserializeObject<AppSettings>(y.sourceSettings["text"]?.ToString() ?? "");
+            return appSettings;
+        }
+
+        public void SaveAppSettings(AppSettings settings)
+        {
+            var y = OBSClient.GetSourceSettings("settings.json");
+            y.sourceSettings["text"] = JsonConvert.SerializeObject(settings);
+            OBSClient.SetSourceSettings("settings.json", y.sourceSettings);
         }
     }
 }

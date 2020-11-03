@@ -26,10 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CharBotPrime\ChatBotPrime.Core\ChatBotPrime.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Features\MediatR\Queries\" />
   </ItemGroup>
 
