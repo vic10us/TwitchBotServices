@@ -24,7 +24,8 @@ namespace TwitchBot.Service.Features.MediatR.Handlers
                 .Where(sf => sf.IsEnabled && sf.Type.Equals("move_source_filter", StringComparison.InvariantCultureIgnoreCase))
                 .ToList();
             if (!i.Any()) return Task.CompletedTask;
-            var active = i.FirstOrDefault(sf => sf.Settings["activated"] != null && (bool)sf.Settings["activated"])
+            var active = 
+                i.FirstOrDefault(sf => sf.Settings["activated"] != null && (bool)sf.Settings["activated"])
                          ?? i.FirstOrDefault(sf => sf.Name.Equals("Main075")) 
                          ?? i.First();
             if (active == null) return Task.CompletedTask;

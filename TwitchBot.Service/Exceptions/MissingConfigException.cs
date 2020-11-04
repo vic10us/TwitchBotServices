@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TwitchBot.Service.Services
+namespace TwitchBot.Service.Exceptions
 {
     public class MissingConfigException : Exception
     {

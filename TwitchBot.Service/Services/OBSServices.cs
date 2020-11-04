@@ -4,16 +4,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OBS.WebSockets.Core;
 using TwitchBot.Service.Features.MediatR;
+using TwitchBot.Service.Models;
 
 namespace TwitchBot.Service.Services
 {
-    public class AppSettings
-    {
-        public int Version { get; set; }
-        public string Name { get; set; }
-        public string CurrentVideoSize { get; set; }
-    }
-
     public class OBSServices
     {
         private readonly OBSConfig _obsConfig;

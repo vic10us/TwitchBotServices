@@ -1,4 +1,4 @@
-﻿namespace TwitchBot.Service.Services
+﻿namespace TwitchBot.Service.Models
 {
     public class OAuthConfig
     {

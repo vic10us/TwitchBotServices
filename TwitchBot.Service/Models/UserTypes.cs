@@ -9,7 +9,7 @@ namespace TwitchBot.Service.Models
     public enum UserTypes : uint
     {
         None = 0,
-        Broadcaster = 4,
+        Broadcaster = 1 << 4,
         Moderator = 1 << 8,
         Vip = 1 << 12,
         Subscriber = 1 << 16,

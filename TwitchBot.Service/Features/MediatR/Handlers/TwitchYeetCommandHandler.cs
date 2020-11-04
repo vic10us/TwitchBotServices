@@ -1,9 +1,11 @@
 ﻿using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.Extensions.Options;
 using TwitchBot.Service.Features.MediatR.Commands;
+using TwitchBot.Service.Models;
 using TwitchBot.Service.Services;
 using TwitchLib.Client;
 

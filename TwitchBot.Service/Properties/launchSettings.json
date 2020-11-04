@@ -11,10 +11,10 @@
     "TwitchBot.Service": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_URLS": "http://0.0.0.0:5501",
+        "ASPNETCORE_URLS": "http://0.0.0.0:5000",
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "http://localhost:5501"
+      "applicationUrl": "http://localhost:5000"
     },
     "Docker": {
       "commandName": "Docker",

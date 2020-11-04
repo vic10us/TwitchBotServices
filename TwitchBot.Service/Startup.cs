@@ -57,6 +57,7 @@ namespace TwitchBot.Service
             });
             services.AddSingleton<Services.TwitchBot>();
             services.AddSingleton<TwitchClientServices>();
+            services.AddSingleton<TwitchPubSubService>();
             services.Configure<TwitchConfig>(Configuration.GetSection("Twitch"));
             services.Configure<OBSConfig>(Configuration.GetSection("OBS"));
             services.Configure<WLEDConfig>(Configuration.GetSection("WLED"));
@@ -88,6 +89,13 @@ namespace TwitchBot.Service
 
             services.AddTransient<INotifierMediatorService, NotifierMediatorService>();
             services.AddMediatR(Assembly.GetExecutingAssembly());
+            services.AddStackExchangeRedisCache(options =>
+            {
+                // options.InstanceName = "TwitchBotService";
+                var connectionString = Configuration.GetConnectionString("redis");
+                options.Configuration = connectionString;
+            });
+            services.AddSingleton<ICacheService, DistributedCacheService>();
 
             services.AddSerilog(Configuration);
             services.AddRazorPages();

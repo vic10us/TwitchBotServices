@@ -7,8 +7,6 @@ namespace TwitchBot.Service.Features.MediatR.Commands
     {
         public ChatCommand ChatCommand { get; set; }
 
-        public YeetCommand() { }
-
         public YeetCommand(ChatCommand chatCommand)
         {
             ChatCommand = chatCommand;
