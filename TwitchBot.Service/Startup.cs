@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using OBS.WebSockets.Core;
 using TwitchBot.Service.Extensions;
+using TwitchBot.Service.Features.Caching;
 using TwitchBot.Service.Features.MediatR;
 using TwitchBot.Service.Hubs;
 using TwitchBot.Service.Models;
@@ -67,6 +68,7 @@ namespace TwitchBot.Service
             });
             services.AddSingleton<WLEDService>();
             services.AddSingleton<TwitchMemoryCache>();
+            services.AddSingleton<ICacheClient>(cs => new CacheClient(Configuration.GetConnectionString("redis"), true));
             services.AddSingleton(c =>
             {
                 var obs = new OBSWebsocket { WSTimeout = TimeSpan.FromMinutes(10) };

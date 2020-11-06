@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Linq;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using TwitchBot.Service.Features.Caching;
 using TwitchBot.Service.Features.MediatR;
 using TwitchBot.Service.Features.MediatR.Commands;
 using TwitchBot.Service.Models;
@@ -11,33 +13,31 @@ namespace TwitchBot.Service.Services
 {
     public class TwitchBot
     {
-        private readonly TwitchConfig _config;
         private readonly ILogger<TwitchBot> _logger;
         private readonly INotifierMediatorService _notifierMediatorService;
-        private readonly TwitchClientServices _twitchClientServices;
 
         public TwitchBot(
-            IOptions<TwitchConfig> config,
             ILogger<TwitchBot> logger,
             TwitchClientServices twitchClientServices,
             INotifierMediatorService notifierMediatorService, 
             TwitchPubSubService twitchPubSubService)
         {
-            _config = config.Value;
+            //ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379");
+            //IDatabase db = redis.GetDatabase();
+            // var manager = new RedisManagerPool("localhost:6379");
             _logger = logger;
             _notifierMediatorService = notifierMediatorService;
-            _twitchClientServices = twitchClientServices;
-
+            var twitchClientServices1 = twitchClientServices;
             twitchPubSubService.PubSubClient.OnRewardRedeemed += OnRewardRedeemed;
 
-            _twitchClientServices.Client.OnChatCommandReceived += ClientOnChatCommandReceived;
-            _twitchClientServices.Client.OnMessageReceived += ClientOnMessageReceived;
+            twitchClientServices1.Client.OnChatCommandReceived += ClientOnChatCommandReceived;
+            twitchClientServices1.Client.OnMessageReceived += ClientOnMessageReceived;
         }
 
         private void OnRewardRedeemed(object sender, OnRewardRedeemedArgs e)
         {
-            // var x = _twitchApiClient.Helix.Entitlements.GetCodeStatusAsync(new List<string> { $"{e.RewardId}" }, _config.Chat.PasswordGeneratorToken).Result;
-            _twitchClientServices.Client.SendMessage(_config.Chat.Channel, $"Redeemed: {e.RewardId}");
+            if (!e.Status.Equals("UNFULFILLED")) return;
+            _notifierMediatorService.NotifyPattern(e.RewardTitle.ToLowerInvariant());
         }
 
         private void ClientOnMessageReceived(object sender, OnMessageReceivedArgs e)
@@ -48,35 +48,8 @@ namespace TwitchBot.Service.Services
         private void ClientOnChatCommandReceived(object sender, OnChatCommandReceivedArgs e)
         {
             _logger.LogInformation($"Received Chat Command: {JsonConvert.SerializeObject(e.Command, Formatting.Indented)}");
-            _notifierMediatorService.Notify(new CallOutCommand(e.Command.ChatMessage.UserId, e.Command.ChatMessage.Username));
-
-            switch (e.Command.CommandText.ToLowerInvariant())
-            {
-                case "drop":
-                    _notifierMediatorService.Notify(new DropCommand(e.Command.ChatMessage));
-                    break;
-                case "yeet":
-                    _notifierMediatorService.Notify(new YeetCommand(e.Command));
-                    break;
-                case "stats":
-                    _notifierMediatorService.Notify(new StatsCommand());
-                    break;
-                case "grow":
-                    _notifierMediatorService.Notify(new GrowCommand());
-                    break;
-                case "shrink":
-                    _notifierMediatorService.Notify(new ShrinkCommand());
-                    break;
-                case "restore":
-                    _notifierMediatorService.Notify(new RestoreCommand());
-                    break;
-                case "ledfx":
-                    _notifierMediatorService.Notify(new LedFXCommand(e.Command.ArgumentsAsString));
-                    break;
-                default:
-                    _notifierMediatorService.Notify(new UnknownChatCommand(e.Command.CommandText));
-                    break;
-            }
+            _notifierMediatorService.Notify(new CallOutCommand(e.Command));
+            _notifierMediatorService.NotifyPattern(e.Command.CommandText.ToLowerInvariant(), e.Command);
         }
     }
 }

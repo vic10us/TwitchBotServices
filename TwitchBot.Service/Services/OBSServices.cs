@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -12,16 +13,22 @@ namespace TwitchBot.Service.Services
     {
         private readonly OBSConfig _obsConfig;
         private readonly INotifierMediatorService _notifierMediatorService;
+        private readonly ILogger<OBSServices> _logger;
         public event EventHandler Connected;
         public event EventHandler Disconnected;
 
         public OBSWebsocket OBSClient { get; }
 
-        public OBSServices(OBSWebsocket obs, IOptions<OBSConfig> obsConfig, INotifierMediatorService notifierMediatorService)
+        public OBSServices(
+            OBSWebsocket obs, 
+            IOptions<OBSConfig> obsConfig, 
+            INotifierMediatorService notifierMediatorService, 
+            ILogger<OBSServices> logger)
         {
             OBSClient = obs;
             _obsConfig = obsConfig.Value;
             _notifierMediatorService = notifierMediatorService;
+            _logger = logger;
             SetupOBS();
         }
 
@@ -35,7 +42,16 @@ namespace TwitchBot.Service.Services
 
         private void ConnectOBS()
         {
-            if (!OBSClient.IsConnected) OBSClient.Connect(_obsConfig.Connection.Url, _obsConfig.Connection.Password);
+            try
+            {
+                if (!OBSClient.IsConnected)
+                    OBSClient.Connect(_obsConfig.Connection.Url, _obsConfig.Connection.Password);
+            }
+            catch
+            {
+                // do nothing for now...
+                _logger.LogWarning("Failed to connect to OBS Websockets");
+            }
         }
 
         private void OnObsConnected(object sender, EventArgs e)
