@@ -5,4 +5,6 @@
     public interface IChatCommand { }
 
     public interface IChatMessageCommand { }
+
+    public interface IRedemptionCommand { }
 }

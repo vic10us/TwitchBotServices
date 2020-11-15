@@ -25,6 +25,9 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="MediatR" Version="9.0.0" />
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="TwitchLib.Api" Version="3.1.4-CI-20201113-26" />
+    <PackageReference Include="TwitchLib.Client" Version="3.1.6-CI-20201008-9" />
+    <PackageReference Include="TwitchLib.PubSub" Version="3.1.5-CI-20201109-10" />
   </ItemGroup>
 
   <ItemGroup>

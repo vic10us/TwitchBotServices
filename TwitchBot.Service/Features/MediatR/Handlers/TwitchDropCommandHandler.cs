@@ -24,7 +24,7 @@ namespace TwitchBot.Service.Features.MediatR.Handlers
         public async Task Handle(DropCommand notification, CancellationToken cancellationToken)
         {
             var uo = _twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> { notification.ChatMessage.DisplayName }).Result.Users.FirstOrDefault();
-            await _twitchHub.Clients.All.SendAsync("ReceiveMessage", notification.ChatMessage.DisplayName, "Make it rain", uo, cancellationToken: cancellationToken);
+            await _twitchHub.Clients.All.SendAsync("ReceiveMessage", notification.ChatMessage.DisplayName, "dropuser", uo, cancellationToken: cancellationToken);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http.Headers;
 using System.Reflection;
 using AutoMapper;
 using Ganss.XSS;
@@ -66,6 +67,12 @@ namespace TwitchBot.Service
             {
                 c.BaseAddress = new Uri(Configuration["WLED:BaseUrl"]);
             });
+            services.AddHttpClient("TwitchClientServices", (s,c) =>
+            {
+                var config = s.GetService<IOptions<TwitchConfig>>()!.Value;
+                c.BaseAddress = new Uri("https://api.twitch.tv");
+                c.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse($"Bearer {config.Auth.AccessToken}");
+            });
             services.AddSingleton<WLEDService>();
             services.AddSingleton<TwitchMemoryCache>();
             services.AddSingleton<ICacheClient>(cs => new CacheClient(Configuration.GetConnectionString("redis"), true));
@@ -78,14 +85,14 @@ namespace TwitchBot.Service
 
             services.AddTransient(c =>
             {
-                var config = c.GetService<IOptions<TwitchConfig>>()?.Value;
+                var config = c.GetService<IOptions<TwitchConfig>>()!.Value;
                 IApiSettings apiSettings = new ApiSettings
                 {
-                    ClientId = config?.Auth.ClientId,
-                    Secret = config?.Auth.ClientSecret
+                    ClientId = config!.Auth.ClientId,
+                    Secret = config!.Auth.ClientSecret
                 };
                 var api = new TwitchAPI(settings: apiSettings);
-                api.Settings.AccessToken = config?.Auth.AccessToken;
+                api.Settings.AccessToken = config!.Auth.AccessToken;
                 return api;
             });
 
@@ -98,12 +105,17 @@ namespace TwitchBot.Service
                 options.Configuration = connectionString;
             });
             services.AddSingleton<ICacheService, DistributedCacheService>();
-
             services.AddSerilog(Configuration);
             services.AddRazorPages();
             services.AddSignalR()
                 .AddNewtonsoftJsonProtocol()
                 .AddMessagePackProtocol();
+
+            var servicesProvider = services.BuildServiceProvider(validateScopes: true);
+            using (var scope = servicesProvider.CreateScope())
+            {
+                var client = scope.ServiceProvider.GetRequiredService<TwitchClientServices>();
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

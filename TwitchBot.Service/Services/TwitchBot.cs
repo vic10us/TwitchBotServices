@@ -1,11 +1,7 @@
-﻿using System.Linq;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using TwitchBot.Service.Features.Caching;
 using TwitchBot.Service.Features.MediatR;
 using TwitchBot.Service.Features.MediatR.Commands;
-using TwitchBot.Service.Models;
 using TwitchLib.Client.Events;
 using TwitchLib.PubSub.Events;
 
@@ -15,6 +11,7 @@ namespace TwitchBot.Service.Services
     {
         private readonly ILogger<TwitchBot> _logger;
         private readonly INotifierMediatorService _notifierMediatorService;
+        private readonly TwitchClientServices _twitchClientServices;
 
         public TwitchBot(
             ILogger<TwitchBot> logger,
@@ -27,17 +24,27 @@ namespace TwitchBot.Service.Services
             // var manager = new RedisManagerPool("localhost:6379");
             _logger = logger;
             _notifierMediatorService = notifierMediatorService;
-            var twitchClientServices1 = twitchClientServices;
+            _twitchClientServices = twitchClientServices;
+            _twitchClientServices.Init();
+
             twitchPubSubService.PubSubClient.OnRewardRedeemed += OnRewardRedeemed;
 
-            twitchClientServices1.Client.OnChatCommandReceived += ClientOnChatCommandReceived;
-            twitchClientServices1.Client.OnMessageReceived += ClientOnMessageReceived;
+            _twitchClientServices.Client.OnJoinedChannel += ClientOnJoinedChannel;
+            _twitchClientServices.Client.OnChatCommandReceived += ClientOnChatCommandReceived;
+            _twitchClientServices.Client.OnMessageReceived += ClientOnMessageReceived;
+            
+            _twitchClientServices.Connect();
+        }
+
+        private void ClientOnJoinedChannel(object? sender, OnJoinedChannelArgs e)
+        {
+            _twitchClientServices.Client.SendMessage(e.Channel, "Hello peeps! Yeet all the thingz!");
         }
 
         private void OnRewardRedeemed(object sender, OnRewardRedeemedArgs e)
         {
             if (!e.Status.Equals("UNFULFILLED")) return;
-            _notifierMediatorService.NotifyPattern(e.RewardTitle.ToLowerInvariant());
+            _notifierMediatorService.NotifyPattern(e.RewardTitle.ToLowerInvariant(), e);
         }
 
         private void ClientOnMessageReceived(object sender, OnMessageReceivedArgs e)

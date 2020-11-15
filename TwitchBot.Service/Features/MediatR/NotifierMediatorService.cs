@@ -19,24 +19,23 @@ namespace TwitchBot.Service.Features.MediatR
     {
         private readonly IMediator _mediator;
         private readonly IEnumerable<INotification> _notifications;
-        private readonly IEnumerable<Type> _types;
 
         public NotifierMediatorService(IMediator mediator)
         {
             _mediator = mediator;
             var type = typeof(INotification);
-            _types = AppDomain.CurrentDomain.GetAssemblies()
+            IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(s => s.GetTypes())
                 .Where(p => type.IsAssignableFrom(p));
             var notifications = new List<INotification>();
-            foreach (var type1 in _types)
+            foreach (var type1 in types)
             {
                 try
                 {
                     var o = Activator.CreateInstance(type1);
-                    notifications.Add(o as INotification);
+                    notifications.Add((o as INotification)!);
                 }
-                catch(Exception ex)
+                catch
                 {
                     // do nothing for now... maybe log it later.
                 }
@@ -57,7 +56,7 @@ namespace TwitchBot.Service.Features.MediatR
             {
                 if (command is INullCommand || args == null || args.Length == 0) 
                     _mediator.Publish(command);
-                else if (command is IChatCommand || command is IChatMessageCommand)
+                else if (command is IChatCommand || command is IChatMessageCommand || command is IRedemptionCommand)
                 {
                     var type = command.GetType();
                     var param = Activator.CreateInstance(type, args);

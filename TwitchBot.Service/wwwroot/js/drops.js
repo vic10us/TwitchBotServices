@@ -1,7 +1,11 @@
 ﻿var connection = new signalR
     .HubConnectionBuilder()
     .withUrl('/twitchHub')
-    .withAutomaticReconnect()
+    .withAutomaticReconnect({
+        nextRetryDelayInMilliseconds: retryContext => {
+            return 1000;
+        }
+    })
     .configureLogging(signalR.LogLevel.Information)
     .build();
 
@@ -15,6 +19,7 @@ let highScores = [];
 
 connection.on('ReceiveMessage', function (user, message, uo) {
     if (currentUsers[user]) return;
+    if (message !== 'dropuser') return;
     
     const u = {
         profile_image_url: 'https://abs.twimg.com/emoji/v2/svg/1f603.svg',

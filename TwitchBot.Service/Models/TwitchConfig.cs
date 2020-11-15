@@ -1,6 +1,4 @@
-﻿using TwitchBot.Service.Services;
-
-namespace TwitchBot.Service.Models
+﻿namespace TwitchBot.Service.Models
 {
     public class TwitchConfig
     {
