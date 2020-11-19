@@ -2,7 +2,6 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,13 +15,11 @@ using TwitchLib.Communication.Models;
 
 namespace TwitchBot.Service.Services
 {
-    public class TwitchClientServices : IDisposable
+    public class TwitchClientServices
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<TwitchClientServices> _logger;
         public TwitchClient Client { get; private set; }
-        private readonly CancellationTokenSource _Shutdown;
-        private TcpClient _TcpClient;
         private readonly TwitchConfig _config;
 
         public TwitchClientServices(IOptions<TwitchConfig> settings,
@@ -32,11 +29,6 @@ namespace TwitchBot.Service.Services
             _httpClientFactory = httpClientFactory;
             _logger = loggerFactory.CreateLogger<TwitchClientServices>();
             _config = settings.Value!;
-            
-            // Client.Connect();
-            // Init();
-
-            _Shutdown = new CancellationTokenSource();
         }
 
         public void Init()
@@ -48,7 +40,8 @@ namespace TwitchBot.Service.Services
             var clientOptions = new ClientOptions
             {
                 MessagesAllowedInPeriod = 750,
-                ThrottlingPeriod = TimeSpan.FromSeconds(30)
+                ThrottlingPeriod = TimeSpan.FromSeconds(30),
+                ReconnectionPolicy = new ReconnectionPolicy(1000)
             };
 
             var customClient = new WebSocketClient(clientOptions);
@@ -83,17 +76,6 @@ namespace TwitchBot.Service.Services
             response.EnsureSuccessStatusCode();
         }
 
-        ~TwitchClientServices()
-        {
-            try
-            {
-                _logger?.LogError("GC the TwitchClientServices");
-            }
-            catch { }
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(false);
-        }
-
         private void ClientOnConnected(object sender, OnConnectedArgs e)
         {
             _logger.LogInformation($"Client Connected... {e.BotUsername}");
@@ -110,37 +92,6 @@ namespace TwitchBot.Service.Services
             if (!Client.IsConnected) Client.Connect();
         }
 
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
-        private Thread _ReceiveMessagesThread;
-
-        protected virtual void Dispose(bool disposing)
-        {
-
-            try
-            {
-                _logger?.LogWarning("Disposing of ChatClient");
-            }
-            catch { }
-
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    _Shutdown.Cancel();
-                }
-
-                _TcpClient?.Dispose();
-                disposedValue = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-        #endregion
     }
 
     public enum RedemptionStatus
