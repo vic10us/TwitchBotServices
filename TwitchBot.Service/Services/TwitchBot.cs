@@ -19,9 +19,6 @@ namespace TwitchBot.Service.Services
             INotifierMediatorService notifierMediatorService, 
             TwitchPubSubService twitchPubSubService)
         {
-            //ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost:6379");
-            //IDatabase db = redis.GetDatabase();
-            // var manager = new RedisManagerPool("localhost:6379");
             _logger = logger;
             _notifierMediatorService = notifierMediatorService;
             _twitchClientServices = twitchClientServices;
