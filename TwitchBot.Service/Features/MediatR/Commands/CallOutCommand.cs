@@ -1,23 +1,42 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Linq;
+using System.Text.RegularExpressions;
 using MediatR;
 using TwitchLib.Client.Models;
 
 namespace TwitchBot.Service.Features.MediatR.Commands
 {
-    public class CallOutCommand : INotification, IStringCommandMatcher, IChatCommand, IChatMessageCommand
+    public class CallOutCommand : 
+        INotification, 
+        IStringCommandMatcher, 
+        IStringParamCommand, 
+        IChatCommand, 
+        IChatMessageCommand
     {
-        private const string CommandIdentifier = "^(callout|co)$";
+        private const string CommandIdentifier = "^(callout|co|so|shoutout)$";
         private static Regex matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
 
-        public string UserId { get; set; }
+        public string UserId { get; set; } = null;
         public string UserName { get; set; }
 
         public CallOutCommand() { }
 
+        public CallOutCommand(string userName)
+        {
+            this.UserName = userName;
+        }
+
         public CallOutCommand(ChatCommand command)
         {
-            UserId = command.ChatMessage.UserId;
-            UserName = command.ChatMessage.Username;
+            if (command.ArgumentsAsList.Any())
+            {
+                UserId = null;
+                UserName = command.ArgumentsAsString;
+            }
+            else
+            {
+                UserId = command.ChatMessage.UserId;
+                UserName = command.ChatMessage.Username;
+            }
         }
 
         public CallOutCommand(ChatMessage message)

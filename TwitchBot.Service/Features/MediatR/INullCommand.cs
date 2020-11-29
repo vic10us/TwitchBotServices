@@ -7,4 +7,6 @@
     public interface IChatMessageCommand { }
 
     public interface IRedemptionCommand { }
+
+    public interface IStringParamCommand { }
 }

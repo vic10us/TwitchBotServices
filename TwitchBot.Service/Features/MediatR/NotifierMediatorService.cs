@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace TwitchBot.Service.Features.MediatR
 {
@@ -18,11 +19,13 @@ namespace TwitchBot.Service.Features.MediatR
     public class NotifierMediatorService : INotifierMediatorService
     {
         private readonly IMediator _mediator;
+        private readonly ILogger _logger;
         private readonly IEnumerable<INotification> _notifications;
 
-        public NotifierMediatorService(IMediator mediator)
+        public NotifierMediatorService(IMediator mediator, ILogger<NotifierMediatorService> logger)
         {
             _mediator = mediator;
+            _logger = logger;
             var type = typeof(INotification);
             IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(s => s.GetTypes())
@@ -54,14 +57,26 @@ namespace TwitchBot.Service.Features.MediatR
             var commands = GetCommands(pattern);
             foreach (var command in commands)
             {
-                if (command is INullCommand || args == null || args.Length == 0) 
-                    _mediator.Publish(command);
-                else if (command is IChatCommand || command is IChatMessageCommand || command is IRedemptionCommand)
+                if (args == null || args.Length == 0)
                 {
-                    var type = command.GetType();
-                    var param = Activator.CreateInstance(type, args);
-                    _mediator.Publish(param!);
+                    _mediator.Publish(command);
+                    continue;
                 }
+
+                if (command is INullCommand _)
+                    _mediator.Publish(command);
+                else if (command is IRedemptionCommand _ || command is IChatCommand _ ||
+                         command is IChatMessageCommand _)
+                    try
+                    {
+                        var type = command.GetType();
+                        var param = Activator.CreateInstance(type, args);
+                        _mediator.Publish(param!);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError("Failed to publish message....", ex);
+                    }
             }
         }
 

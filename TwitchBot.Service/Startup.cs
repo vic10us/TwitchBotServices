@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using OBS.WebSockets.Core;
 using TwitchBot.Service.Extensions;
 using TwitchBot.Service.Features.Caching;
+using TwitchBot.Service.Features.HealthChecks;
 using TwitchBot.Service.Features.MediatR;
 using TwitchBot.Service.Hubs;
 using TwitchBot.Service.Models;
@@ -111,11 +112,14 @@ namespace TwitchBot.Service
                 .AddNewtonsoftJsonProtocol()
                 .AddMessagePackProtocol();
 
+            services.AddHealthChecks()
+                .AddCheck<OBSWebSocketsHealthCheck>("obs_websockets_check")
+                .AddCheck<TwitchClientHealthCheck>("twitch_client_check")
+                .AddCheck<TwitchPubSubHealthCheck>("twitch_pubsub_check");
+
             var servicesProvider = services.BuildServiceProvider(validateScopes: true);
-            using (var scope = servicesProvider.CreateScope())
-            {
-                var client = scope.ServiceProvider.GetRequiredService<TwitchClientServices>();
-            }
+            using var scope = servicesProvider.CreateScope();
+            _ = scope.ServiceProvider.GetRequiredService<TwitchClientServices>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -149,8 +153,11 @@ namespace TwitchBot.Service
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapRazorPages();
-                endpoints.MapHub<TwitchHub>("/twitchhub");
+                endpoints.MapHub<TwitchHub>("/twitchhub"); 
+                // endpoints.MapHealthChecks("/health");
             });
+
+            app.AddHealthMetrics();
         }
     }
 }

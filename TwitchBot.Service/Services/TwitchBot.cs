@@ -33,7 +33,7 @@ namespace TwitchBot.Service.Services
             _twitchClientServices.Connect();
         }
 
-        private void ClientOnJoinedChannel(object? sender, OnJoinedChannelArgs e)
+        private void ClientOnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
             _twitchClientServices.Client.SendMessage(e.Channel, "Hello peeps! Yeet all the thingz!");
         }

@@ -45,12 +45,18 @@ namespace TwitchBot.Service.Services
             };
 
             var customClient = new WebSocketClient(clientOptions);
+            customClient.OnDisconnected += WsClientOnDisconnected;
             Client = new TwitchClient(customClient);
             Client.Initialize(credentials, _config.Chat.Channel);
 
             Client.OnConnected += ClientOnConnected;
             Client.OnDisconnected += ClientOnDisconnected;
             Client.OnJoinedChannel += ClientOnJoinedChannel;
+        }
+
+        private void WsClientOnDisconnected(object sender, OnDisconnectedEventArgs e)
+        {
+            _logger.LogError($"The Websocket client has disconnected... :'(, {e}");
         }
 
         public void Connect()
@@ -78,17 +84,17 @@ namespace TwitchBot.Service.Services
 
         private void ClientOnConnected(object sender, OnConnectedArgs e)
         {
-            _logger.LogInformation($"Client Connected... {e.BotUsername}");
+            _logger.LogInformation($"Client OnConnected... {e.BotUsername}");
         }
 
         private void ClientOnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
-            _logger.LogInformation($"Connected to Channel: {e.Channel}");
+            _logger.LogInformation($"OnConnected to Channel: {e.Channel}");
         }
 
         private void ClientOnDisconnected(object sender, OnDisconnectedEventArgs e)
         {
-            _logger.LogInformation($"Connected disconnected. reconnecting...");
+            _logger.LogInformation($"OnConnected disconnected. reconnecting...");
             if (!Client.IsConnected) Client.Connect();
         }
 
