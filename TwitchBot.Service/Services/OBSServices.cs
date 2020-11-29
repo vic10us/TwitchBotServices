@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -12,32 +14,42 @@ namespace TwitchBot.Service.Services
     public class OBSServices
     {
         private readonly OBSConfig _obsConfig;
+        private readonly IServiceProvider _services;
         private readonly INotifierMediatorService _notifierMediatorService;
         private readonly ILogger<OBSServices> _logger;
-        public event EventHandler Connected;
-        public event EventHandler Disconnected;
+        public event EventHandler OnConnected;
+        public event EventHandler OnDisconnected;
+        public event EventHandler OnReady;
+        public bool IsReady { get; private set; } = false;
+        public uint ConnectionAttempts { get; private set; } = 0;
+        public uint ConnectionFailures { get; private set; } = 0;
+        public DateTimeOffset? LastConnectionFailure { get; private set; } = null;
+        public DateTimeOffset? LastSuccessfulConnection { get; private set; } = null;
+        public DateTimeOffset? LastConnectionAttempt { get; private set; } = null;
 
-        public OBSWebsocket OBSClient { get; }
+        public OBSWebsocket OBSClient { get; private set; }
 
         public OBSServices(
-            OBSWebsocket obs, 
+            IServiceProvider services,
             IOptions<OBSConfig> obsConfig, 
             INotifierMediatorService notifierMediatorService, 
             ILogger<OBSServices> logger)
         {
-            OBSClient = obs;
             _obsConfig = obsConfig.Value;
+            _services = services;
             _notifierMediatorService = notifierMediatorService;
             _logger = logger;
-            SetupOBS();
+            var task = Task.Run(SetupOBS);
         }
 
         private void SetupOBS()
         {
+            OBSClient = _services.GetRequiredService<OBSWebsocket>();
             _notifierMediatorService.Notify("OBS is being setup");
             OBSClient.Connected += OnObsConnected;
             OBSClient.Disconnected += OnObsDisconnected;
             ConnectOBS();
+            OnReady?.Invoke(this, EventArgs.Empty);
         }
 
         private void ConnectOBS()
@@ -45,7 +57,13 @@ namespace TwitchBot.Service.Services
             try
             {
                 if (!OBSClient.IsConnected)
+                {
+                    ConnectionAttempts++;
+                    LastConnectionAttempt = DateTimeOffset.UtcNow;
                     OBSClient.Connect(_obsConfig.Connection.Url, _obsConfig.Connection.Password);
+                }
+
+                IsReady = true;
             }
             catch
             {
@@ -56,14 +74,16 @@ namespace TwitchBot.Service.Services
 
         private void OnObsConnected(object sender, EventArgs e)
         {
-            var connected = this.Connected;
+            LastSuccessfulConnection = DateTimeOffset.UtcNow;
+            var connected = this.OnConnected;
             connected?.Invoke(this, e);
         }
 
         private void OnObsDisconnected(object sender, EventArgs e)
         {
-            var disconnected = this.Disconnected;
-            disconnected?.Invoke(this, e);
+            ConnectionFailures++;
+            LastConnectionFailure = DateTimeOffset.UtcNow;
+            OnDisconnected?.Invoke(this, e);
             ConnectOBS();
         }
 

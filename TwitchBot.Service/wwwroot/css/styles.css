@@ -43,24 +43,24 @@ h4 {
     animation: sway 1s infinite alternate ease-in-out;
 }
 
-    .drop.landed.no-target {
-        transform: rotate(0deg);
-        opacity: 0;
-        animation: fadeout 90s;
-        transform-origin: bottom;
-    }
+.drop.landed.no-target {
+    transform: rotate(0deg);
+    opacity: 0;
+    animation: fadeout 90s;
+    transform-origin: bottom;
+}
 
-    .drop.landed.seedling-target {
-        opacity: 0;
-        animation: fadeout 1s;
-        transform-origin: bottom;
-    }
+.drop.landed.seedling-target {
+    opacity: 0;
+    animation: fadeout 1s;
+    transform-origin: bottom;
+}
 
-    .drop.landed .chute {
-        transform: scale(0);
-        animation: shrink 1s ease-in-out;
-        transform-origin: bottom;
-    }
+.drop.landed .chute {
+    transform: scale(0);
+    animation: shrink 1s ease-in-out;
+    transform-origin: bottom;
+}
 
 .username {
     font-size: 2rem;
@@ -94,9 +94,9 @@ h4 {
     z-index: 999;
 }
 
-    .drop .user-image img {
-        width: 100%;
-    }
+.drop .user-image img {
+    width: 100%;
+}
 
 .drop .avatar {
     width: 100%;
@@ -116,9 +116,9 @@ h4 {
     transform-origin: bottom left;
 }
 
-    .seedling-container img {
-        filter: drop-shadow(5px 5px 5px #222);
-    }
+.seedling-container img {
+    filter: drop-shadow(5px 5px 5px #222);
+}
 
 @keyframes sway {
     0% {

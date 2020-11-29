@@ -33,10 +33,19 @@ namespace TwitchBot.Service.Features.MediatR.Handlers
 
         private async Task CallOutUser(string userId, string userName)
         {
+            var manualShoutout = false;
+            if (userId == null)
+            {
+                manualShoutout = true;
+                var usersResponse = await _twitchApiClient.Helix.Users.GetUsersAsync(logins: new[] {userName}.ToList());
+                if (usersResponse == null || usersResponse.Users.Length <= 0) return;
+                userId = usersResponse.Users.First().Id;
+            }
+
             var teamMember = _config.TeamMembers.FirstOrDefault(tm =>
                 tm.Id.Equals(userId, StringComparison.InvariantCultureIgnoreCase));
 
-            if (teamMember == null || teamMember.IgnoreShoutOut) return;
+            if (!manualShoutout && (teamMember == null || teamMember.IgnoreShoutOut)) return;
 
             var cacheKey = $"TeamShoutout:{userId}";
             if (await _cacheService.ValueExists(cacheKey)) return; // Team Member shoutout already done. :)
@@ -49,7 +58,10 @@ namespace TwitchBot.Service.Features.MediatR.Handlers
             });
 
             var channel = await _twitchApiClient.V5.Channels.GetChannelByIDAsync(userId);
-            var message = @$"{_config.TeamName} team member detected! 
+            var message = manualShoutout ? 
+                $"Check out @{userName} here: https://twitch.tv/{userName} | They were last seen streaming {channel.Status} in {channel.Game}" 
+                :
+                @$"{_config.TeamName} team member detected! 
     YEET!, @{userName}! 
     Check out their channel here: https://twitch.tv/{userName} 
     | They were last seen streaming {channel.Status} in {channel.Game}";

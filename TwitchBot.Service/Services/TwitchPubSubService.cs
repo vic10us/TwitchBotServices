@@ -31,6 +31,11 @@ namespace TwitchBot.Service.Services
             {
                 _logger.LogError("The service encountered a critical error... :(", args);
             };
+            PubSubClient.OnChannelSubscription += (sender, args) =>
+            {
+                
+            };
+
             PubSubClient.Connect();
         }
 
