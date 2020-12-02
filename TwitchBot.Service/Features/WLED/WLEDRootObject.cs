@@ -1,4 +1,4 @@
-﻿namespace TwitchBot.Service.Models
+﻿namespace TwitchBot.Service.Features.WLED
 {
     public class WLEDRootObject
     {

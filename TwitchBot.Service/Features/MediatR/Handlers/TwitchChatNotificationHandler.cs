@@ -17,14 +17,16 @@ namespace TwitchBot.Service.Features.MediatR.Handlers
 {
     public class TwitchChatNotificationHandler : INotificationHandler<ChatNotification>
     {
+        private readonly INotifierMediatorService _notifierMediatorService;
         private readonly IMapper _mapper;
         private readonly TwitchConfig _config;
         private readonly HtmlSanitizer _sanitizer;
         private readonly TwitchAPI _twitchApiClient;
         private readonly IHubContext<TwitchHub> _twitchHub;
 
-        public TwitchChatNotificationHandler(IMapper mapper, IOptions<TwitchConfig> config, HtmlSanitizer sanitizer, TwitchAPI twitchApiClient, IHubContext<TwitchHub> twitchHub)
+        public TwitchChatNotificationHandler(INotifierMediatorService notifierMediatorService, IMapper mapper, IOptions<TwitchConfig> config, HtmlSanitizer sanitizer, TwitchAPI twitchApiClient, IHubContext<TwitchHub> twitchHub)
         {
+            _notifierMediatorService = notifierMediatorService;
             _mapper = mapper;
             _sanitizer = sanitizer;
             _twitchApiClient = twitchApiClient;
@@ -64,9 +66,9 @@ namespace TwitchBot.Service.Features.MediatR.Handlers
                 UserTypes = userTypes
             };
 
-            var uo = _twitchApiClient.Helix.Users.GetUsersAsync(ids: new List<string> { data.UserId }).Result.Users.FirstOrDefault();
-            data.LogoUrl = uo?.ProfileImageUrl;
-            await _twitchHub.Clients.All.SendAsync("ReceiveChatMessage", data, uo, cancellationToken: cancellationToken);
+            var bcn = new BasicChatNotification(data);
+            _notifierMediatorService.Notify(bcn);
+            // await _twitchHub.Clients.All.SendAsync("ReceiveChatMessage", data, uo, cancellationToken: cancellationToken);
         }
     }
 

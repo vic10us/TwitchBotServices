@@ -1,6 +1,7 @@
 ﻿using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using TwitchBot.Service.Features.WLED;
 using TwitchBot.Service.Models;
 
 namespace TwitchBot.Service.Services
