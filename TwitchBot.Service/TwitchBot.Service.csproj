@@ -32,9 +32,7 @@
 
   <ItemGroup>
     <Folder Include="Features\MediatR\Queries\" />
-    <Folder Include="Features\WLED\" />
     <Folder Include="Features\Twitch\" />
-    <Folder Include="Features\OBS\" />
   </ItemGroup>
 
 </Project>

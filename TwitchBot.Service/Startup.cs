@@ -15,6 +15,7 @@ using TwitchBot.Service.Extensions;
 using TwitchBot.Service.Features.Caching;
 using TwitchBot.Service.Features.HealthChecks;
 using TwitchBot.Service.Features.MediatR;
+using TwitchBot.Service.Features.WLED;
 using TwitchBot.Service.Hubs;
 using TwitchBot.Service.Models;
 using TwitchBot.Service.Services;
@@ -64,6 +65,10 @@ namespace TwitchBot.Service
             services.Configure<TwitchConfig>(Configuration.GetSection("Twitch"));
             services.Configure<OBSConfig>(Configuration.GetSection("OBS"));
             services.Configure<WLEDConfig>(Configuration.GetSection("WLED"));
+            services.AddHttpClient<WLEDService>("DadJokeService", c =>
+            {
+                c.BaseAddress = new Uri(Configuration["DadJokes:BaseUrl"]);
+            });
             services.AddHttpClient<WLEDService>("WLEDService", c =>
             {
                 c.BaseAddress = new Uri(Configuration["WLED:BaseUrl"]);
@@ -111,6 +116,8 @@ namespace TwitchBot.Service
             services.AddSignalR()
                 .AddNewtonsoftJsonProtocol()
                 .AddMessagePackProtocol();
+
+            services.AddSingleton<DadJokeService>();
 
             services.AddHealthChecks()
                 .AddCheck<OBSWebSocketsHealthCheck>("obs_websockets_check")
