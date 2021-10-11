@@ -1,5 +1,6 @@
 ﻿namespace TwitchBot.Service.Models
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class TwitchChatConfig
     {
         public string PasswordGeneratorToken { get; set; }

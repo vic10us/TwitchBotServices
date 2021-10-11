@@ -7,7 +7,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
     public class LedFXCommand : INotification, IStringCommandMatcher, IChatCommand
     {
         private const string CommandIdentifier = "ledfx";
-        private static Regex matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
+        private static Regex Matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
 
         public string FX { get; set; }
 
@@ -25,7 +25,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
 
         public bool Match(string commandName)
         {
-            return matcher.IsMatch(commandName);
+            return Matcher.IsMatch(commandName);
         }
     }
 }

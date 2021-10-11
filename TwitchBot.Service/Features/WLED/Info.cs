@@ -1,5 +1,6 @@
 ﻿namespace TwitchBot.Service.Features.WLED
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class Info
     {
         public string ver { get; set; }

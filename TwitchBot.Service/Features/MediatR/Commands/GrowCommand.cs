@@ -7,7 +7,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
     public class GrowCommand : INotification, IStringCommandMatcher, IRedemptionCommand
     {
         private const string CommandIdentifier = "^grow!$";
-        private static Regex matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
+        private static Regex Matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
         public OnRewardRedeemedArgs RewardRedeemedArgs { get; set; }
 
         public GrowCommand() { }
@@ -19,7 +19,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
 
         public bool Match(string commandName)
         {
-            return matcher.IsMatch(commandName);
+            return Matcher.IsMatch(commandName);
         }
     }
 }

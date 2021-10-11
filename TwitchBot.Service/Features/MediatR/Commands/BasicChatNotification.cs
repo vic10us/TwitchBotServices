@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using TwitchBot.Service.Models;
-using TwitchLib.Api.Helix.Models.Users;
+using TwitchLib.Api.Helix.Models.Users.GetUsers;
 
 namespace TwitchBot.Service.Features.MediatR.Commands
 {

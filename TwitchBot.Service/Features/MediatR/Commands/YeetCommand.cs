@@ -7,7 +7,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
     public class YeetCommand : INotification, IStringCommandMatcher, IChatCommand
     {
         private const string CommandIdentifier = "yeet";
-        private static Regex matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
+        private static Regex Matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
 
         public ChatCommand ChatCommand { get; set; }
 
@@ -20,7 +20,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
 
         public bool Match(string commandName)
         {
-            return matcher.IsMatch(commandName);
+            return Matcher.IsMatch(commandName);
         }
     }
 }

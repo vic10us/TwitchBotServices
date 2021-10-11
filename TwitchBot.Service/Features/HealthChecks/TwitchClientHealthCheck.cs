@@ -5,6 +5,7 @@ using TwitchBot.Service.Services;
 
 namespace TwitchBot.Service.Features.HealthChecks
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class TwitchClientHealthCheck : IHealthCheck
     {
         private readonly TwitchClientServices _service;

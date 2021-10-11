@@ -3,7 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace TwitchBot.Service.Features.MediatR
 {
@@ -22,9 +25,14 @@ namespace TwitchBot.Service.Features.MediatR
         private readonly ILogger _logger;
         private readonly IEnumerable<INotification> _notifications;
 
-        public NotifierMediatorService(IMediator mediator, ILogger<NotifierMediatorService> logger)
+        public NotifierMediatorService(IMediator mediator,
+            IServiceProvider sp
+            // , ILogger logger
+            )
         {
             _mediator = mediator;
+            
+            var logger = sp.GetService<ILogger<NotifierMediatorService>>();
             _logger = logger;
             var type = typeof(INotification);
             IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()

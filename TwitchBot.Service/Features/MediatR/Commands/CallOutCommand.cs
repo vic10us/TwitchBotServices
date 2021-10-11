@@ -13,7 +13,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
         IChatMessageCommand
     {
         private const string CommandIdentifier = "^(callout|co|so|shoutout)$";
-        private static Regex matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
+        private static Regex Matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
 
         public string UserId { get; set; } = null;
         public string UserName { get; set; }
@@ -53,7 +53,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
 
         public bool Match(string commandName)
         {
-            return matcher.IsMatch(commandName);
+            return Matcher.IsMatch(commandName);
         }
     }
 }

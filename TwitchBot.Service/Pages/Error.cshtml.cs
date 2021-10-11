@@ -14,9 +14,11 @@ namespace TwitchBot.Service.Pages
 
         private readonly ILogger<ErrorModel> _logger;
 
-        public ErrorModel(ILogger<ErrorModel> logger)
+        public ErrorModel(
+            ILoggerFactory loggerFactory
+            )
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<ErrorModel>();
         }
 
         public void OnGet()

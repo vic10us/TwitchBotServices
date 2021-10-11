@@ -14,12 +14,13 @@ namespace TwitchBot.Service.Services
         private readonly TwitchClientServices _twitchClientServices;
 
         public TwitchBot(
-            ILogger<TwitchBot> logger,
             TwitchClientServices twitchClientServices,
             INotifierMediatorService notifierMediatorService, 
-            TwitchPubSubService twitchPubSubService)
+            TwitchPubSubService twitchPubSubService,
+            ILoggerFactory loggerFactory
+            )
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<TwitchBot>();
             _notifierMediatorService = notifierMediatorService;
             _twitchClientServices = twitchClientServices;
             _twitchClientServices.Init();
@@ -52,7 +53,7 @@ namespace TwitchBot.Service.Services
         private void ClientOnChatCommandReceived(object sender, OnChatCommandReceivedArgs e)
         {
             _logger.LogInformation($"Received Chat Command: {JsonConvert.SerializeObject(e.Command, Formatting.Indented)}");
-            _notifierMediatorService.Notify(new CallOutCommand(e.Command));
+            // _notifierMediatorService.Notify(new CallOutCommand(e.Command));
             _notifierMediatorService.NotifyPattern(e.Command.CommandText.ToLowerInvariant(), e.Command);
         }
     }

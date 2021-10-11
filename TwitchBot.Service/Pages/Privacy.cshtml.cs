@@ -7,9 +7,11 @@ namespace TwitchBot.Service.Pages
     {
         private readonly ILogger<PrivacyModel> _logger;
 
-        public PrivacyModel(ILogger<PrivacyModel> logger)
+        public PrivacyModel(
+            ILoggerFactory loggerFactory
+            )
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<PrivacyModel>();
         }
 
         public void OnGet()

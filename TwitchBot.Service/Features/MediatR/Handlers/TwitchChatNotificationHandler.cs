@@ -67,7 +67,8 @@ namespace TwitchBot.Service.Features.MediatR.Handlers
             };
 
             var bcn = new BasicChatNotification(data);
-            _notifierMediatorService.Notify(bcn);
+            await Task.Run(() => _notifierMediatorService.Notify(bcn), cancellationToken);
+            // _notifierMediatorService.Notify(bcn);
             // await _twitchHub.Clients.All.SendAsync("ReceiveChatMessage", data, uo, cancellationToken: cancellationToken);
         }
     }

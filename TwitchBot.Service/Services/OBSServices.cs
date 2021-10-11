@@ -32,14 +32,15 @@ namespace TwitchBot.Service.Services
         public OBSServices(
             IServiceProvider services,
             IOptions<OBSConfig> obsConfig, 
-            INotifierMediatorService notifierMediatorService, 
-            ILogger<OBSServices> logger)
+            INotifierMediatorService notifierMediatorService,
+            ILoggerFactory loggerFactory
+            )
         {
             _obsConfig = obsConfig.Value;
             _services = services;
             _notifierMediatorService = notifierMediatorService;
-            _logger = logger;
-            var task = Task.Run(SetupOBS);
+            _logger = loggerFactory.CreateLogger<OBSServices>();
+            SetupOBS();
         }
 
         private void SetupOBS()

@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using TwitchBot.Service.Features.DadJokes;
-using TwitchBot.Service.Models;
 
 namespace TwitchBot.Service.Services
 {

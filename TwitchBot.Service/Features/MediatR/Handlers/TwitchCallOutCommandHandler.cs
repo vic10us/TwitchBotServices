@@ -61,8 +61,7 @@ namespace TwitchBot.Service.Features.MediatR.Handlers
             var message = manualShoutout ? 
                 $"Check out @{userName} here: https://twitch.tv/{userName} | They were last seen streaming {channel.Status} in {channel.Game}" 
                 :
-                @$"{_config.TeamName} team member detected! 
-    YEET!, @{userName}! 
+                @$"{_config.TeamName} team member detected! HOORAY!, @{userName}! 
     Check out their channel here: https://twitch.tv/{userName} 
     | They were last seen streaming {channel.Status} in {channel.Game}";
             _twitchClientServices.Client.SendMessage(_config.Chat.Channel, message);

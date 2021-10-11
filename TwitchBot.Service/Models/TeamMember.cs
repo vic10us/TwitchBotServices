@@ -1,5 +1,6 @@
 ﻿namespace TwitchBot.Service.Models
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class TeamMember
     {
         public string Id { get; set; }

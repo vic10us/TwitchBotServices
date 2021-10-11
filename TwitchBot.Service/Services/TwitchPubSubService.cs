@@ -15,9 +15,12 @@ namespace TwitchBot.Service.Services
         private readonly ILogger<TwitchPubSubService> _logger;
         public TwitchPubSub PubSubClient { get; }
 
-        public TwitchPubSubService(TwitchAPI twitchApiClient, IOptions<TwitchConfig> config, ILogger<TwitchPubSubService> logger)
+        public TwitchPubSubService(
+            TwitchAPI twitchApiClient, 
+            IOptions<TwitchConfig> config,
+            ILoggerFactory loggerFactory)
         {
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger<TwitchPubSubService>();
             _config = config.Value;
             PubSubClient = new TwitchPubSub();
             var user = twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> { "vic10usx" }).Result.Users.First();

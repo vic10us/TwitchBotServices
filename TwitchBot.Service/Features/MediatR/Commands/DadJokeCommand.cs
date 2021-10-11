@@ -7,7 +7,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
     public class DadJokeCommand : INotification, IStringCommandMatcher, IChatCommand
     {
         private const string CommandIdentifier = "^dadjoke$";
-        private static Regex matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
+        private static Regex Matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
         public ChatCommand ChatCommand;
 
         public DadJokeCommand() { }
@@ -19,7 +19,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
 
         public bool Match(string commandName)
         {
-            return matcher.IsMatch(commandName);
+            return Matcher.IsMatch(commandName);
         }
     }
 }

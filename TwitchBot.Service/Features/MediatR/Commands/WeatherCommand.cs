@@ -7,7 +7,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
     public class WeatherCommand : INotification, IStringCommandMatcher, IChatCommand
     {
         private const string CommandIdentifier = "^(rain|snow|blizzard|hail|shower)$";
-        private static Regex matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
+        private static Regex Matcher => new Regex(CommandIdentifier, RegexOptions.IgnoreCase);
 
         public ChatCommand Command { get; set; }
 
@@ -20,7 +20,7 @@ namespace TwitchBot.Service.Features.MediatR.Commands
 
         public bool Match(string commandName)
         {
-            return matcher.IsMatch(commandName);
+            return Matcher.IsMatch(commandName);
         }
     }
 }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -12,19 +10,13 @@ using Newtonsoft.Json.Serialization;
 
 namespace TwitchBot.Service.Extensions
 {
-    public class HealthStatus
-    {
-        public DateTimeOffset StartedAt { get; set; }
-        public TimeSpan UpTime => DateTimeOffset.UtcNow - StartedAt;
-    }
-
     public static class HealthMetrics
     {
         private static DateTimeOffset _startedAt = DateTimeOffset.UtcNow;
 
-        public static void Initialize() { }
+        private static void Initialize() { }
 
-        public static HealthStatus Status()
+        private static HealthStatus Status()
         {
             return new HealthStatus
             {
@@ -42,7 +34,7 @@ namespace TwitchBot.Service.Extensions
             });
         }
 
-        public static Task WriteResponse(HttpContext httpContext, HealthReport result)
+        private static Task WriteResponse(HttpContext httpContext, HealthReport result)
         {
             httpContext.Response.ContentType = "application/json";
 
