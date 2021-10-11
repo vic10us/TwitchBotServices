@@ -26,6 +26,7 @@ namespace TwitchBot.Service.Services
             var user = twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> { "vic10usx" }).Result.Users.First();
             PubSubClient.OnPubSubServiceConnected += OnPubSubServiceConnected;
             PubSubClient.ListenToRewards(user.Id);
+            // PubSubClient.ListenToChannelPoints(user.Id);
             PubSubClient.OnPubSubServiceClosed += (sender, args) =>
             {
                 _logger.LogWarning("The service has closed it's connection... :(", args);
