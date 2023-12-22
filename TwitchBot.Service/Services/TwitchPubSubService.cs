@@ -23,7 +23,7 @@ namespace TwitchBot.Service.Services
             _logger = loggerFactory.CreateLogger<TwitchPubSubService>();
             _config = config.Value;
             PubSubClient = new TwitchPubSub();
-            var user = twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> { "vic10usx" }).Result.Users.First();
+            var user = twitchApiClient.Helix.Users.GetUsersAsync(logins: new List<string> { "thisistherealvoice" }).Result.Users.First();
             PubSubClient.OnPubSubServiceConnected += OnPubSubServiceConnected;
             PubSubClient.ListenToRewards(user.Id);
             // PubSubClient.ListenToChannelPoints(user.Id);

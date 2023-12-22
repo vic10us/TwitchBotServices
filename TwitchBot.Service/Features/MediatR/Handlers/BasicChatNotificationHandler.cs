@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Ganss.XSS;
+using Ganss.Xss;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using TwitchBot.Service.Features.MediatR.Commands;

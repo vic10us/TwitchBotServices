@@ -1,7 +1,7 @@
 using System;
 using System.Net.Http.Headers;
 using System.Reflection;
-using Ganss.XSS;
+using Ganss.Xss;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -124,7 +124,10 @@ namespace TwitchBot.Service
             });
 
             services.AddTransient<INotifierMediatorService, NotifierMediatorService>();
-            services.AddMediatR(Assembly.GetExecutingAssembly());
+            services.AddMediatR(c => {
+                c.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            });
+            // services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddStackExchangeRedisCache(options =>
             {
                 // options.InstanceName = "TwitchBotService";

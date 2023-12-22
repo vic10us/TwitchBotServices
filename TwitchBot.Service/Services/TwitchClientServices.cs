@@ -84,17 +84,17 @@ namespace TwitchBot.Service.Services
 
         private void ClientOnConnected(object sender, OnConnectedArgs e)
         {
-            _logger.LogInformation($"Client OnConnected... {e.BotUsername}");
+            _logger.LogInformation("Client OnConnected... {BotUsername}", e.BotUsername);
         }
 
         private void ClientOnJoinedChannel(object sender, OnJoinedChannelArgs e)
         {
-            _logger.LogInformation($"OnConnected to Channel: {e.Channel}");
+            _logger.LogInformation("OnConnected to Channel: {Channel}", e.Channel);
         }
 
         private void ClientOnDisconnected(object sender, OnDisconnectedEventArgs e)
         {
-            _logger.LogInformation($"OnConnected disconnected. reconnecting...");
+            _logger.LogInformation("OnConnected disconnected. reconnecting...");
             if (!Client.IsConnected) Client.Connect();
         }
 

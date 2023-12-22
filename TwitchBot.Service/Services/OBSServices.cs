@@ -76,8 +76,7 @@ namespace TwitchBot.Service.Services
         private void OnObsConnected(object sender, EventArgs e)
         {
             LastSuccessfulConnection = DateTimeOffset.UtcNow;
-            var connected = this.OnConnected;
-            connected?.Invoke(this, e);
+            OnConnected?.Invoke(this, e);
         }
 
         private void OnObsDisconnected(object sender, EventArgs e)

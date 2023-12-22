@@ -56,14 +56,14 @@ namespace TwitchBot.Service.Features.MediatR.Handlers
                 SlidingExpiration = TimeSpan.FromMinutes(30),
                 AbsoluteExpiration = DateTimeOffset.Now.AddHours(1)
             });
-
-            var channel = await _twitchApiClient.V5.Channels.GetChannelByIDAsync(userId);
+            var streams = await _twitchApiClient.Helix.Streams.GetStreamsAsync(userIds: [userId], type: "live");
+            var stream = streams.Streams.FirstOrDefault();
             var message = manualShoutout ? 
-                $"Check out @{userName} here: https://twitch.tv/{userName} | They were last seen streaming {channel.Status} in {channel.Game}" 
+                $"Check out @{userName} here: https://twitch.tv/{userName} | They were last seen streaming {stream.Title} in {stream.GameName}" 
                 :
                 @$"{_config.TeamName} team member detected! HOORAY!, @{userName}! 
     Check out their channel here: https://twitch.tv/{userName} 
-    | They were last seen streaming {channel.Status} in {channel.Game}";
+    | They were last seen streaming {stream.Title} in {stream.GameName}";
             _twitchClientServices.Client.SendMessage(_config.Chat.Channel, message);
         }
     }
